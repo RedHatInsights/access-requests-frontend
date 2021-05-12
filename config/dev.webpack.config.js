@@ -29,6 +29,7 @@ plugins.push(
   })
 );
 
+webpackConfig.devServer.hot = false;
 webpackConfig.devServer.proxy = getProxyPaths({ webpackPort });
 
 module.exports = {

@@ -26,7 +26,7 @@ import { getLabelProps } from '../Helpers/getLabelProps';
 import { getInternalActions, StatusLabel } from '../Helpers/getActions';
 import PropTypes from 'prop-types';
 
-const BaseAccessRequestDetailsPage = ({ isInternal, baseUrl }) => {
+const BaseAccessRequestDetailsPage = ({ isInternal }) => {
   const [request, setRequest] = React.useState();
   const { requestId } = useParams();
   const dispatch = useDispatch();
@@ -74,7 +74,7 @@ const BaseAccessRequestDetailsPage = ({ isInternal, baseUrl }) => {
         <Breadcrumb>
           <BreadcrumbItem
             render={() => (
-              <Link to={baseUrl}>
+              <Link to="../">
                 {!isInternal && 'Red Hat '}Access Requests
               </Link>
             )}
@@ -227,7 +227,6 @@ AccessRequestDetailsPage.propTypes = {
 
 BaseAccessRequestDetailsPage.propTypes = {
   isInternal: PropTypes.bool,
-  baseUrl: PropTypes.string,
 };
 
 export default AccessRequestDetailsPage;
