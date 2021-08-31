@@ -16,6 +16,9 @@ The list and details pages are exported as federated modules for use in [rbac-ui
 2. `SPANDX_CONFIG="$(pwd)/insights-inventory-frontend/config/spandx.config.js" bash insights-proxy/scripts/run.sh`
 3. `npm run start:frontend`
 
+### OR [Webpack Proxy](https://github.com/RedHatInsights/frontend-components/tree/master/packages/config#useproxy)
+2. `npm run start:proxy` or on beta env: `BETA=true npm run start:proxy`
+
 ### Testing
 We are using [jest](https://www.npmjs.com/package/jest) and [react-testing](https://www.npmjs.com/package/@testing-library/react)
 

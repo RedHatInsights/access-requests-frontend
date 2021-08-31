@@ -11,6 +11,8 @@
     "lint:js": "eslint config src",
     "prod": "NODE_ENV=production webpack serve --config config/dev.webpack.config.js",
     "start": "webpack serve --config config/dev.webpack.config.js",
+    "start:proxy": "PROXY=true webpack serve --config config/dev.webpack.config.js",
+    "start:frontend": "INSIGHTS_PROXY=true webpack serve --config config/dev.webpack.config.js",
     "travis:build": "npm run build",
     "travis:verify": "npm-run-all travis:build lint test",
     "verify": "npm-run-all build lint test",

@@ -7,21 +7,39 @@ const {
 } = require('@redhat-cloud-services/frontend-components-config-utilities/standalone');
 const commonPlugins = require('./plugins');
 
+const insightsProxy = {
+  https: false,
+  ...(process.env.BETA && { deployment: 'beta/apps' }),
+};
+
+const webpackProxy = {
+  deployment: process.env.BETA ? 'beta/apps' : 'apps',
+  useProxy: true,
+  env: `stage-${process.env.BETA ? 'beta' : 'stable'}`, // change this to [ci|qa|stage|prod]
+  appUrl: process.env.BETA
+    ? ['/beta/internal/access-requests']
+    : ['/internal/access-requests'],
+};
+
+const standalone = {
+  rbac,
+  backofficeProxy,
+  ...defaultServices,
+};
+
+const isProxy = process.env.PROXY || false;
+const isInsightsProxy = process.env.INSIGHTS_PROXY || false;
+
 const { config: webpackConfig, plugins } = config({
   rootFolder: resolve(__dirname, '../'),
   debug: true,
   deployment: 'beta/apps',
-  standalone: {
-    rbac,
-    backofficeProxy,
-    ...defaultServices,
-  },
-  // useProxy: true,
-  // appUrl: ['/beta/internal/access-requests', '/internal/access-requests']
+  ...(isProxy && webpackProxy),
+  ...(isInsightsProxy && insightsProxy),
+  ...(!isProxy && !isInsightsProxy && { standalone }),
 });
 plugins.push(...commonPlugins);
 
-console.log('double check', webpackConfig.devServer.proxy);
 module.exports = {
   ...webpackConfig,
   plugins,
