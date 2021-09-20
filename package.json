@@ -38,7 +38,7 @@
     "@babel/preset-env": "^7.10.0",
     "@babel/preset-react": "^7.10.0",
     "@redhat-cloud-services/eslint-config-redhat-cloud-services": "^1.1.0",
-    "@redhat-cloud-services/frontend-components-config": "^4.2.3",
+    "@redhat-cloud-services/frontend-components-config": "^4.3.5",
     "@testing-library/react": "^11.2.6",
     "assert": "^2.0.0",
     "babel-eslint": "^10.1.0",
