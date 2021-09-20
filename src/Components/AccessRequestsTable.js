@@ -339,6 +339,7 @@ const AccessRequestsTable = ({ isInternal }) => {
                   aria-label="Select statuses"
                   onToggle={(isOpen) => setIsSelectOpen(isOpen)}
                   onSelect={(_ev, selection) => {
+                    setFiltersDirty(true);
                     if (statusSelections.includes(selection)) {
                       setStatusSelections(
                         statusSelections.filter((s) => s !== selection)
