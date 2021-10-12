@@ -1,18 +1,21 @@
 import React, { Fragment, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { useHistory } from 'react-router-dom';
 import { Routes } from './Routes';
 import NotificationPortal from '@redhat-cloud-services/frontend-components-notifications/NotificationPortal';
 import './index.css';
 
-const App = () => {
+const App = ({ basename }) => {
   const history = useHistory();
   useEffect(() => {
     insights.chrome.init();
 
     insights.chrome.identifyApp('access-requests');
-    const unregister = insights.chrome.on('APP_NAVIGATION', (event) =>
-      history.push(`/${event.navId}`)
-    );
+    const unregister = insights.chrome.on('APP_NAVIGATION', (event) => {
+      if (event?.domEvent?.href) {
+        history.push(event?.domEvent?.href.replace(basename), '');
+      }
+    });
     return () => {
       unregister();
     };
@@ -24,6 +27,10 @@ const App = () => {
       <Routes />
     </Fragment>
   );
+};
+
+App.propTypes = {
+  basename: PropTypes.string.isRequired,
 };
 
 export default App;

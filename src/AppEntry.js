@@ -5,6 +5,8 @@ import registry, { RegistryContext } from './store';
 import App from './App';
 import { getBaseName } from '@redhat-cloud-services/frontend-components-utilities/helpers/helpers';
 
+const basename = getBaseName(window.location.pathname);
+
 const AppEntry = () => (
   <RegistryContext.Provider
     value={{
@@ -12,8 +14,8 @@ const AppEntry = () => (
     }}
   >
     <Provider store={registry.getStore()}>
-      <Router basename={getBaseName(window.location.pathname)}>
-        <App />
+      <Router basename={basename}>
+        <App basename={basename} />
       </Router>
     </Provider>
   </RegistryContext.Provider>
