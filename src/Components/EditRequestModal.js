@@ -25,6 +25,7 @@ import { useDispatch } from 'react-redux';
 import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
 import MUARolesTable from './MUARolesTable';
 import PropTypes from 'prop-types';
+import apiInstance from '../Helpers/apiInstance';
 
 const nameHelperText =
   'Customers will be able to see this information as part of your request';
@@ -343,9 +344,9 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
   React.useEffect(() => {
     const userPromise = window.insights.chrome.auth.getUser();
     const detailsPromise = isEdit
-      ? fetch(`${API_BASE}/cross-account-requests/${requestId}/`, {
+      ? apiInstance.get(`${API_BASE}/cross-account-requests/${requestId}/`, {
           headers: { Accept: 'application/json' },
-        }).then((res) => res.json())
+        })
       : new Promise((res) => res(true));
 
     Promise.all([userPromise, detailsPromise])
@@ -390,18 +391,16 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
       end_date: end,
       roles,
     };
-    fetch(
+    apiInstance[isEdit ? 'put' : 'post'](
       `${API_BASE}/cross-account-requests/${isEdit ? `/${requestId}/` : ''}`,
+      body,
       {
-        method: isEdit ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify(body),
       }
     )
-      .then((res) => res.json())
       .then((res) => {
         if (res.errors && res.errors.length > 0) {
           throw Error(res.errors[0].detail);

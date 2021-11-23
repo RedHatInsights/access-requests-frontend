@@ -18,13 +18,13 @@ const interceptor403 = (error) => {
   throw error;
 };
 
-const axiosInstance = axios.create();
-axiosInstance.interceptors.request.use(authInterceptor);
-axiosInstance.interceptors.response.use(responseDataInterceptor);
+const apiInstance = axios.create();
+apiInstance.interceptors.request.use(authInterceptor);
+apiInstance.interceptors.response.use(responseDataInterceptor);
 
-axiosInstance.interceptors.response.use(null, interceptor401);
-axiosInstance.interceptors.response.use(null, interceptor403);
-axiosInstance.interceptors.response.use(null, interceptor500);
-axiosInstance.interceptors.response.use(null, errorInterceptor);
+apiInstance.interceptors.response.use(null, interceptor401);
+apiInstance.interceptors.response.use(null, interceptor403);
+apiInstance.interceptors.response.use(null, interceptor500);
+apiInstance.interceptors.response.use(null, errorInterceptor);
 
-export default axiosInstance;
+export default apiInstance;

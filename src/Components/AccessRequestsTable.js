@@ -39,6 +39,7 @@ import { addNotification } from '@redhat-cloud-services/frontend-components-noti
 import { Link, useRouteMatch } from 'react-router-dom';
 import { getInternalActions, StatusLabel } from '../Helpers/getActions';
 import PropTypes from 'prop-types';
+import apiInstance from '../Helpers/apiInstance';
 
 function uncapitalize(input) {
   return input[0].toLowerCase() + input.substring(1);
@@ -176,8 +177,8 @@ const AccessRequestsTable = ({ isInternal }) => {
       .replace(' ', '_')}`;
     listUrl.searchParams.append('order_by', orderBy);
 
-    fetch(listUrl.href, { headers: { Accept: 'application/json' } })
-      .then((res) => res.json())
+    apiInstance
+      .get(listUrl.href, { headers: { Accept: 'application/json' } })
       .then((res) => {
         setNumRows(res.meta.count);
         setRows(

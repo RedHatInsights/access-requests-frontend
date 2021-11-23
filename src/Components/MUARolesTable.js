@@ -36,6 +36,7 @@ import { css } from '@patternfly/react-styles';
 import { useDispatch } from 'react-redux';
 import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
 import PropTypes from 'prop-types';
+import apiInstance from '../Helpers/apiInstance';
 
 let rolesCache = [];
 let applicationsCache = [];
@@ -50,11 +51,11 @@ const MUARolesTable = ({
   const [applications, setApplications] = React.useState(applicationsCache);
   React.useEffect(() => {
     if (rolesCache.length === 0 || applicationsCache.length === 0) {
-      fetch(
-        `${API_BASE}/roles/?limit=9999&order_by=display_name&add_fields=groups_in_count`,
-        { headers: { Accept: 'application/json' } }
-      )
-        .then((res) => res.json())
+      apiInstance
+        .get(
+          `${API_BASE}/roles/?limit=9999&order_by=display_name&add_fields=groups_in_count`,
+          { headers: { Accept: 'application/json' } }
+        )
         .then(({ data }) => {
           data.forEach((role) => {
             role.isExpanded = false;
@@ -350,10 +351,10 @@ const MUARolesTable = ({
     row.isExpanded = !row.isExpanded;
     setRows([...rows]);
     if (!row.access) {
-      fetch(`${API_BASE}/roles/${row.uuid}/`, {
-        headers: { Accept: 'application/json' },
-      })
-        .then((res) => res.json())
+      apiInstance
+        .get(`${API_BASE}/roles/${row.uuid}/`, {
+          headers: { Accept: 'application/json' },
+        })
         .then((res) => {
           row.access = res.access.map((a) => a.permission.split(':'));
           setRows([...rows]);

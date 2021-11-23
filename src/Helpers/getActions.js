@@ -6,6 +6,7 @@ import { getLabelProps } from './getLabelProps';
 import EditAltIcon from '@patternfly/react-icons/dist/js/icons/edit-alt-icon';
 import { capitalize } from '@patternfly/react-core/dist/esm/helpers/util';
 import PropTypes from 'prop-types';
+import apiInstance from './apiInstance';
 
 export function getInternalActions(status, requestId, setOpenModal) {
   const items = [];
@@ -32,15 +33,17 @@ export function StatusLabel({ requestId, status: statusProp, hideActions }) {
 
   function onClick(newStatus) {
     setIsLoading(true);
-    fetch(`${API_BASE}/cross-account-requests/${requestId}/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ status: newStatus }),
-    })
-      .then((res) => res.json())
+    apiInstance
+      .patch(
+        `${API_BASE}/cross-account-requests/${requestId}/`,
+        { status: newStatus },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        }
+      )
       .then((res) => {
         if (res.errors && res.errors.length > 0) {
           throw Error(res.errors.map((e) => e.detail).join('\n'));

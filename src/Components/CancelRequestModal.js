@@ -3,6 +3,7 @@ import { Modal, Button, Spinner } from '@patternfly/react-core';
 import { useDispatch } from 'react-redux';
 import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
 import PropTypes from 'prop-types';
+import apiInstance from '../Helpers/apiInstance';
 
 const CancelRequestModal = ({ requestId, onClose }) => {
   const [isLoading, setIsLoading] = React.useState(false);
@@ -10,15 +11,17 @@ const CancelRequestModal = ({ requestId, onClose }) => {
   const onCancel = () => {
     setIsLoading(true);
     // https://ci.cloud.redhat.com/docs/api-docs/rbac#operations-CrossAccountRequest-patchCrossAccountRequest
-    fetch(`${API_BASE}/cross-account-requests/${requestId}/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify({ status: 'cancelled' }),
-    })
-      .then((res) => res.json())
+    apiInstance
+      .patch(
+        `${API_BASE}/cross-account-requests/${requestId}/`,
+        { status: 'cancelled' },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        }
+      )
       .then((res) => {
         if (res.errors && res.errors.length > 0) {
           throw Error(res.errors.map((e) => e.detail).join('\n'));

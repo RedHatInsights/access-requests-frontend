@@ -25,19 +25,20 @@ import EditRequestModal from '../Components/EditRequestModal';
 import { getLabelProps } from '../Helpers/getLabelProps';
 import { getInternalActions, StatusLabel } from '../Helpers/getActions';
 import PropTypes from 'prop-types';
+import apiInstance from '../Helpers/apiInstance';
 
 const BaseAccessRequestDetailsPage = ({ isInternal }) => {
   const [request, setRequest] = React.useState();
   const { requestId } = useParams();
   const dispatch = useDispatch();
   React.useEffect(() => {
-    fetch(
-      `${API_BASE}/cross-account-requests/${requestId}/${
-        isInternal ? '?query_by=user_id' : ''
-      }`,
-      { headers: { Accept: 'application/json' } }
-    )
-      .then((res) => res.json())
+    apiInstance
+      .get(
+        `${API_BASE}/cross-account-requests/${requestId}/${
+          isInternal ? '?query_by=user_id' : ''
+        }`,
+        { headers: { Accept: 'application/json' } }
+      )
       .then((res) => {
         if (res.errors) {
           throw Error(res.errors.map((e) => e.detail).join('\n'));
