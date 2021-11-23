@@ -1,7 +1,10 @@
 import { createContext } from 'react';
-import ReducerRegistry from '@redhat-cloud-services/frontend-components-utilities/ReducerRegistry';
+import ReducerRegistry, {
+  applyReducerHash,
+} from '@redhat-cloud-services/frontend-components-utilities/ReducerRegistry';
 import notificationsMiddleware from '@redhat-cloud-services/frontend-components-notifications/notificationsMiddleware';
 import { notificationsReducer } from '@redhat-cloud-services/frontend-components-notifications/redux';
+import errorReducer from './Redux/error-reducer';
 
 export const RegistryContext = createContext({
   getRegistry: () => {},
@@ -15,6 +18,7 @@ const registry = new ReducerRegistry({}, [
 ]);
 
 registry.register({
+  errorReducer: applyReducerHash(errorReducer),
   notifications: notificationsReducer,
 });
 

@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { useHistory } from 'react-router-dom';
 import { Routes } from './Routes';
 import NotificationPortal from '@redhat-cloud-services/frontend-components-notifications/NotificationPortal';
+import ErroReducerCatcher from './Components/ErrorReducerCatcher';
+
 import './index.css';
 
 const App = ({ basename }) => {
@@ -24,7 +26,9 @@ const App = ({ basename }) => {
   return (
     <Fragment>
       <NotificationPortal />
-      <Routes />
+      <ErroReducerCatcher>
+        <Routes />
+      </ErroReducerCatcher>
     </Fragment>
   );
 };
