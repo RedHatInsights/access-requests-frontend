@@ -290,6 +290,7 @@ const AccessRequestsTable = ({ isInternal }) => {
       onClick={() => {
         setStatusSelections([]);
         setAccountFilter('');
+        setPage(1);
       }}
     >
       Clear filters
@@ -348,6 +349,7 @@ const AccessRequestsTable = ({ isInternal }) => {
                     } else {
                       setStatusSelections([...statusSelections, selection]);
                     }
+                    setPage(1);
                   }}
                   isOpen={isSelectOpen}
                   selections={Array.from(statusSelections)}
@@ -376,7 +378,7 @@ const AccessRequestsTable = ({ isInternal }) => {
                   aria-label={`${filterColumn} search input`}
                   value={accountFilter}
                   onChange={(val) => {
-                    setAccountFilter(val), setFiltersDirty(true);
+                    setAccountFilter(val), setFiltersDirty(true), setPage(1);
                   }}
                 />
               </form>
@@ -393,11 +395,12 @@ const AccessRequestsTable = ({ isInternal }) => {
           {statusSelections.map((status) => (
             <Chip
               key={status}
-              onClick={() =>
+              onClick={() => {
                 setStatusSelections(
                   statusSelections.filter((s) => s !== status)
-                )
-              }
+                );
+                setPage(1);
+              }}
             >
               {status}
             </Chip>
@@ -405,7 +408,13 @@ const AccessRequestsTable = ({ isInternal }) => {
         </ChipGroup>
         {accountFilter && (
           <ChipGroup categoryName="Account number">
-            <Chip onClick={() => setAccountFilter('')}>{accountFilter}</Chip>
+            <Chip
+              onClick={() => {
+                setAccountFilter(''), setPage(1);
+              }}
+            >
+              {accountFilter}
+            </Chip>
           </ChipGroup>
         )}
         {hasFilters && clearFiltersButton}
@@ -478,12 +487,13 @@ const AccessRequestsTable = ({ isInternal }) => {
                     <StatusLabel
                       requestId={row[0]}
                       status={row[5]}
-                      onLabelClick={() =>
+                      onLabelClick={() => {
                         setStatusSelections([
                           ...statusSelections.filter((s) => s !== status),
                           status,
-                        ])
-                      }
+                        ]);
+                        setPage(1);
+                      }}
                       hideActions
                     />
                   </Td>
