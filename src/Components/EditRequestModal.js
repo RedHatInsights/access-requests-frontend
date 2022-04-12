@@ -36,6 +36,8 @@ const helperTexts = {
     'This is the account number that you would like to receive read access to',
   'access duration':
     'This is the time frame you would like to be granted read access to accounts',
+  'organization id':
+    'This is the org id of the account that you would like to receive read access to',
 };
 const invalidAccountTitle = 'Invalid Account number';
 const getLabelIcon = (field) => (
@@ -76,16 +78,23 @@ const RequestDetailsForm = ({
   user = {},
   targetAccount,
   setTargetAccount,
+  targetOrg,
+  setTargetOrg,
   start,
   setStart,
   end,
   setEnd,
   disableAccount,
+  disableOrgId,
   isLoading,
   error,
 }) => {
   let [startDate, setStartDate] = React.useState();
   const [validatedAccount, setValidatedAccount] = React.useState(
+    error ? 'error' : 'default'
+  );
+
+  const [validatedOrgId, setValidatedOrgId] = React.useState(
     error ? 'error' : 'default'
   );
 
@@ -177,6 +186,27 @@ const RequestDetailsForm = ({
         />
       </FormGroup>
       <FormGroup
+        label="Organization id"
+        isRequired
+        labelIcon={getLabelIcon('organization id')}
+        helperText="Enter the organization id you would like access to"
+        helperTextInvalid="Please enter a valid organization id"
+        validated={validatedOrgId}
+      >
+        <TextInput
+          id="org-id"
+          value={targetOrg}
+          onChange={(val) => {
+            setTargetOrg(val);
+            setValidatedOrgId('default');
+          }}
+          isRequired
+          placeholder="Example, 1234567"
+          validated={validatedOrgId}
+          isDisabled={disableOrgId}
+        />
+      </FormGroup>
+      <FormGroup
         label="Access duration"
         isRequired
         labelIcon={getLabelIcon('access duration')}
@@ -218,11 +248,14 @@ RequestDetailsForm.propTypes = {
   user: PropTypes.any,
   targetAccount: PropTypes.any,
   setTargetAccount: PropTypes.any,
+  targetOrg: PropTypes.any,
+  setTargetOrg: PropTypes.any,
   start: PropTypes.any,
   setStart: PropTypes.any,
   end: PropTypes.any,
   setEnd: PropTypes.any,
   disableAccount: PropTypes.any,
+  disableOrgId: PropTypes.any,
   isLoading: PropTypes.any,
   error: PropTypes.any,
 };
@@ -331,6 +364,7 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
   const [error, setError] = React.useState();
   const [user, setUser] = React.useState();
   const [targetAccount, setTargetAccount] = React.useState();
+  const [targetOrg, setTargetOrg] = React.useState();
   const [start, setStart] = React.useState();
   const [end, setEnd] = React.useState();
   const [roles, setRoles] = React.useState([]);
@@ -365,6 +399,7 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
             setStart(details.start_date);
             setEnd(details.end_date);
             setRoles(details.roles.map((role) => role.display_name));
+            setTargetOrg(details.org_id);
           } else {
             throw Error(`Could not fetch details for request ${requestId}`);
           }
@@ -389,6 +424,7 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
       target_account: targetAccount,
       start_date: start,
       end_date: end,
+      org_id: targetOrg,
       roles,
     };
     apiInstance[isEdit ? 'put' : 'post'](
@@ -439,6 +475,8 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
           user={user}
           targetAccount={targetAccount}
           setTargetAccount={setTargetAccount}
+          targetOrg={targetOrg}
+          setTargetOrg={setTargetOrg}
           start={start}
           setStart={setStart}
           end={end}
