@@ -158,9 +158,10 @@ const AccessRequestsTable = ({ isInternal }) => {
     const listUrl = new URL(
       `${window.location.origin}${API_BASE}/cross-account-requests/`
     );
-    if (isInternal) {
-      listUrl.searchParams.append('query_by', 'target_account');
-    }
+
+    isInternal
+      ? listUrl.searchParams.append('query_by', 'target_account')
+      : listUrl.searchParams.append('query_by', 'user_id');
 
     listUrl.searchParams.append('offset', (page - 1) * perPage);
     listUrl.searchParams.append('limit', perPage);

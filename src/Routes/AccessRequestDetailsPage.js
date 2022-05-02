@@ -35,7 +35,7 @@ const BaseAccessRequestDetailsPage = ({ isInternal }) => {
     apiInstance
       .get(
         `${API_BASE}/cross-account-requests/${requestId}/${
-          isInternal ? '?query_by=target_account' : ''
+          isInternal ? '?query_by=target_account' : '?query_by=user_id'
         }`,
         { headers: { Accept: 'application/json' } }
       )
