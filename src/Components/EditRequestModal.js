@@ -378,9 +378,12 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
   React.useEffect(() => {
     const userPromise = window.insights.chrome.auth.getUser();
     const detailsPromise = isEdit
-      ? apiInstance.get(`${API_BASE}/cross-account-requests/${requestId}/`, {
-          headers: { Accept: 'application/json' },
-        })
+      ? apiInstance.get(
+          `${API_BASE}/cross-account-requests/${requestId}/?query_by=user_id`,
+          {
+            headers: { Accept: 'application/json' },
+          }
+        )
       : new Promise((res) => res(true));
 
     Promise.all([userPromise, detailsPromise])
@@ -399,7 +402,7 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
             setStart(details.start_date);
             setEnd(details.end_date);
             setRoles(details.roles.map((role) => role.display_name));
-            setTargetOrg(details.org_id);
+            setTargetOrg(details.target_org);
           } else {
             throw Error(`Could not fetch details for request ${requestId}`);
           }
