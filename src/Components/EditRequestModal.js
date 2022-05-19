@@ -485,6 +485,7 @@ const EditRequestModal = ({ requestId, variant, onClose }) => {
           end={end}
           setEnd={setEnd}
           disableAccount={isEdit}
+          disableOrgId={isEdit}
           isLoading={isLoading}
           error={error}
         />
