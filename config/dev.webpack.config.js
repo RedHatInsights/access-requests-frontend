@@ -15,6 +15,7 @@ const insightsProxy = {
 const webpackProxy = {
   deployment: process.env.BETA ? 'beta/apps' : 'apps',
   useProxy: true,
+  proxyVerbose: true,
   env: `stage-${process.env.BETA ? 'beta' : 'stable'}`, // change this to [ci|qa|stage|prod]
   appUrl: process.env.BETA
     ? ['/beta/internal/access-requests']
