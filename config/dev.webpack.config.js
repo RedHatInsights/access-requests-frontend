@@ -1,4 +1,5 @@
 const { resolve } = require('path');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const config = require('@redhat-cloud-services/frontend-components-config');
 const {
   defaultServices,
@@ -16,7 +17,7 @@ const webpackProxy = {
   deployment: process.env.BETA ? 'beta/apps' : 'apps',
   useProxy: true,
   proxyVerbose: true,
-  env: `stage-${process.env.BETA ? 'beta' : 'stable'}`, // change this to [ci|qa|stage|prod]
+  env: `stage-beta`,
   appUrl: process.env.BETA
     ? ['/beta/internal/access-requests']
     : ['/internal/access-requests'],
@@ -41,7 +42,7 @@ const { config: webpackConfig, plugins } = config({
 });
 plugins.push(...commonPlugins);
 
-module.exports = {
-  ...webpackConfig,
-  plugins,
+module.exports = async (env) => {
+  env && env.analyze === 'true' && plugins.push(new BundleAnalyzerPlugin());
+  return { ...webpackConfig, plugins }
 };
