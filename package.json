@@ -6,7 +6,7 @@
   "version": "1.2.11",
   "scripts": {
     "build": "fec build",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "lint": "npm-run-all lint:*",
     "lint:js": "eslint config src",
     "lint:js:fix": "eslint config src --fix",
