@@ -1,5 +1,5 @@
 import { Redirect, Route, Switch } from 'react-router-dom';
-import React, { Suspense, lazy, useContext } from 'react';
+import React, { Suspense, lazy, useContext, useState, useEffect } from 'react';
 import {
   Bullseye,
   Spinner,
@@ -15,7 +15,15 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 export const Routes = () => {
   const { getRegistry } = useContext(RegistryContext);
-  const [isInternal, setIsInternal] = React.useState(true);
+  const [isInternal, setIsInternal] = useState(true);
+
+  useEffect(() => {
+    insights.chrome.init();
+    Promise.resolve(insights.chrome.auth.getUser()).then((user) => {
+      setIsInternal(user?.identity?.user?.is_internal);
+    });
+  });
+
   const AccessRequestDetailsPageWrapper = () => (
     <AccessRequestDetailsPage
       isInternal={isInternal}

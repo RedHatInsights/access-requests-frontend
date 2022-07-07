@@ -5,7 +5,7 @@ import registry, { RegistryContext } from './store';
 import App from './App';
 import { getBaseName } from '@redhat-cloud-services/frontend-components-utilities/helpers/helpers';
 
-const basename = getBaseName(window.location.pathname);
+const basename = getBaseName(window.location.pathname, 3);
 
 const AppEntry = () => (
   <RegistryContext.Provider
