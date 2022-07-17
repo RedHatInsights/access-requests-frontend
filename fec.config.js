@@ -5,6 +5,7 @@ module.exports = {
   debug: true,
   useProxy: true,
   proxyVerbose: true,
+  sassPrefix: '.accessRequests, .access-requests',
   /**
    * Change to false after your app is registered in configuration files
    */

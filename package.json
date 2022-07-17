@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@babel/runtime": "7.16.3",
+    "@data-driven-forms/pf4-component-mapper": "^3.18.2",
     "@patternfly/react-core": "^4.175.4",
     "@patternfly/react-table": "^4.44.4",
     "@redhat-cloud-services/frontend-components": "^3.5.1",
@@ -36,7 +37,7 @@
     "@babel/plugin-transform-runtime": "^7.16.4",
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-react": "^7.16.0",
-    "@redhat-cloud-services/eslint-config-redhat-cloud-services": "^1.2.1",
+    "@redhat-cloud-services/eslint-config-redhat-cloud-services": "^1.2.3",
     "@redhat-cloud-services/frontend-components-config": "^4.6.16",
     "@testing-library/react": "^12.1.2",
     "assert": "^2.0.0",

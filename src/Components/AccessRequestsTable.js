@@ -29,7 +29,7 @@ import {
   Td,
 } from '@patternfly/react-table';
 import CancelRequestModal from './CancelRequestModal';
-import EditRequestModal from './EditRequestModal';
+import AccessRequestsWizard from './access-requests-wizard/AccessRequestsWizard';
 import { capitalize } from '@patternfly/react-core/dist/esm/helpers/util';
 import SearchIcon from '@patternfly/react-icons/dist/js/icons/search-icon';
 import FilterIcon from '@patternfly/react-icons/dist/js/icons/filter-icon';
@@ -247,7 +247,7 @@ const AccessRequestsTable = ({ isInternal }) => {
         />
       )}
       {['edit', 'create'].includes(openModal.type) && (
-        <EditRequestModal
+        <AccessRequestsWizard
           variant={openModal.type}
           requestId={openModal.requestId}
           onClose={onModalClose}

@@ -21,7 +21,7 @@ import { useDispatch, Provider } from 'react-redux';
 import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
 import MUARolesTable from '../Components/MUARolesTable';
 import CancelRequestModal from '../Components/CancelRequestModal';
-import EditRequestModal from '../Components/EditRequestModal';
+import AccessRequestWizard from '../Components/access-requests-wizard/AccessRequestsWizard';
 import { getLabelProps } from '../Helpers/getLabelProps';
 import { getInternalActions, StatusLabel } from '../Helpers/getActions';
 import PropTypes from 'prop-types';
@@ -211,7 +211,7 @@ const BaseAccessRequestDetailsPage = ({ isInternal }) => {
         <CancelRequestModal requestId={requestId} onClose={onModalClose} />
       )}
       {openModal.type === 'edit' && (
-        <EditRequestModal
+        <AccessRequestWizard
           variant="edit"
           requestId={requestId}
           onClose={onModalClose}
