@@ -161,7 +161,7 @@ const AccessRequestsTable = ({ isInternal }) => {
 
     isInternal
       ? listUrl.searchParams.append('query_by', 'user_id')
-      : listUrl.searchParams.append('query_by', 'target_account');
+      : listUrl.searchParams.append('query_by', 'target_org');
 
     listUrl.searchParams.append('offset', (page - 1) * perPage);
     listUrl.searchParams.append('limit', perPage);
