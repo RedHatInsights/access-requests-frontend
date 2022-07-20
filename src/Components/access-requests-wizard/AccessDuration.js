@@ -2,17 +2,23 @@ import React from 'react';
 import {
   DatePicker,
   FormGroup,
+  HelperText,
+  HelperTextItem,
   isValidDate,
   Split,
   SplitItem,
+  ValidatedOptions,
 } from '@patternfly/react-core';
 import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import InputHelpPopover from '../common/InputHelpPopover';
+import { ACCESS_FROM, ACCESS_TO } from './schema';
 
 const AccessDuration = () => {
   const formOptions = useFormApi();
   const values = formOptions.getState().values;
   const [startDate, setStartDate] = React.useState();
+  const [endError, setEndError] = React.useState();
+  const [startError, setStartError] = React.useState();
 
   const today = new Date();
   today.setDate(today.getDate() - 1);
@@ -26,10 +32,15 @@ const AccessDuration = () => {
       day: '2-digit',
     });
 
+  const isCorrectFormat = (date) =>
+    /^([0]?[1-9]|[1][0-2])\/([0]?[1-9]|[1|2][0-9]|[3][0|1])\/([0-9]{4})$/.test(
+      date
+    );
+
   const dateParse = (date) => {
     const split = date.split('/');
-    if (split.length !== 3) {
-      return new Date();
+    if (!isCorrectFormat(date)) {
+      return undefined;
     }
     const month = split[0].padStart(2, '0');
     const day = split[1].padStart(2, '0');
@@ -40,48 +51,57 @@ const AccessDuration = () => {
   const startValidator = (date) => {
     if (isValidDate(date)) {
       if (date < today) {
-        formOptions.change('end', '');
-        return 'Start date must be today or later';
+        const message = 'Start date must be today or later';
+        setStartError(message);
+        return message;
       }
       if (date > maxStartDate) {
-        formOptions.change('end', '');
-        return 'Start date must be within 60 days of today';
+        const message = 'Start date must be within 60 days of today';
+        setStartError(message);
+        return message;
       }
     }
-
+    setStartError();
     return '';
   };
 
   const endValidator = (date) => {
+    setEndError();
     if (isValidDate(startDate)) {
       if (startDate > date) {
-        return 'End date must be after from date';
+        const message = 'End date must be after start date';
+        setEndError(message);
+        return message;
       }
-    }
 
-    const maxToDate = new Date(startDate);
-    maxToDate.setFullYear(maxToDate.getFullYear() + 1);
-    return date > maxToDate
-      ? 'Access duration may not be longer than one year'
-      : '';
+      const maxToDate = new Date(startDate);
+      maxToDate.setFullYear(maxToDate.getFullYear() + 1);
+      const message = 'Access duration may not be longer than one year';
+      date > maxToDate && setEndError(message);
+      return date > maxToDate ? message : '';
+    }
+    setEndError();
+    return '';
   };
 
   const onStartChange = (str, date) => {
-    setStartDate(new Date(date));
-    formOptions.change('start', str);
+    setStartDate(date ? new Date(date) : undefined);
+    formOptions.change(ACCESS_FROM, isCorrectFormat(str) ? str : '');
     if (isValidDate(date) && !startValidator(date)) {
       date.setDate(date.getDate() + 7);
-      formOptions.change('end', dateFormat(date));
-    } else {
-      formOptions.change('end', '');
+      formOptions.change(ACCESS_TO, dateFormat(date));
+      setEndError();
     }
   };
 
   const onEndChange = (str, date) => {
-    if (endValidator(date)) {
-      formOptions.change('end', '');
+    if (endValidator(date) || !isCorrectFormat(str)) {
+      formOptions.change(ACCESS_TO, '');
     } else {
-      formOptions.change('end', str);
+      formOptions.change(ACCESS_TO, str);
+      startValidator(startDate) &&
+        formOptions.change(ACCESS_FROM, '') &&
+        setStartError();
     }
   };
 
@@ -106,24 +126,56 @@ const AccessDuration = () => {
           <DatePicker
             aria-label="Start date"
             placeholder="mm/dd/yyyy"
-            value={values['start']}
+            value={values[ACCESS_FROM]}
             dateFormat={dateFormat}
             dateParse={dateParse}
             onChange={onStartChange}
             validators={[startValidator]}
+            inputProps={{
+              onBlur: ({ target: { value } }) => onStartChange(value),
+              validated:
+                values[ACCESS_FROM] === '' ||
+                (values[ACCESS_FROM] && !isCorrectFormat(values[ACCESS_FROM]))
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default,
+            }}
           />
+          {startError || values[ACCESS_FROM] === '' ? (
+            <HelperText>
+              <HelperTextItem variant="error">
+                {values[ACCESS_FROM] === ''
+                  ? 'Enter a valid date '
+                  : startError}
+              </HelperTextItem>
+            </HelperText>
+          ) : null}
         </SplitItem>
         <SplitItem className="pf-u-mt-sm">to</SplitItem>
         <SplitItem>
           <DatePicker
             aria-label="End date"
             placeholder="mm/dd/yyyy"
-            value={values['end']}
+            value={values[ACCESS_TO]}
             dateFormat={dateFormat}
             dateParse={dateParse}
             onChange={onEndChange}
             validators={[endValidator]}
+            inputProps={{
+              onBlur: ({ target: { value } }) => onEndChange(value),
+              validated:
+                values[ACCESS_TO] === '' ||
+                (values[ACCESS_TO] && !isCorrectFormat(values[ACCESS_TO]))
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default,
+            }}
           />
+          {endError || values[ACCESS_TO] === '' ? (
+            <HelperText>
+              <HelperTextItem variant="error">
+                {values[ACCESS_FROM] === '' ? 'Enter a valid date ' : endError}
+              </HelperTextItem>
+            </HelperText>
+          ) : null}
         </SplitItem>
       </Split>
     </FormGroup>
