@@ -200,8 +200,8 @@ spec:
           - name: pathInRepo
             value: tasks/parse-build-deploy-script/parse-build-deploy-script.yaml
       workspaces:
-      - name: source
-        workspace: workspace
+      - name: git-basic-auth
+        workspace: git-auth
       runAfter:
       - clone-repository
     - name: create-frontend-dockerfile
@@ -215,8 +215,8 @@ spec:
           - name: pathInRepo
             value: tasks/create-frontend-dockerfile/create-frontend-dockerfile.yaml
       workspaces:
-      - name: source
-        workspace: workspace
+      - name: git-basic-auth
+        workspace: git-auth
       params:
         - name: path-context
           value: $(params.path-context)
