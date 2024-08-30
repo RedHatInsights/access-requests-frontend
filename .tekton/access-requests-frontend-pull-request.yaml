@@ -199,9 +199,6 @@ spec:
             value: a9141c06476e4c259b7918328e123cdec83c823d
           - name: pathInRepo
             value: tasks/parse-build-deploy-script/parse-build-deploy-script.yaml
-      workspaces:
-      - name: git-basic-auth
-        workspace: git-auth
       runAfter:
       - clone-repository
     - name: create-frontend-dockerfile
@@ -214,9 +211,6 @@ spec:
             value: a9141c06476e4c259b7918328e123cdec83c823d
           - name: pathInRepo
             value: tasks/create-frontend-dockerfile/create-frontend-dockerfile.yaml
-      workspaces:
-      - name: git-basic-auth
-        workspace: git-auth
       params:
         - name: path-context
           value: $(params.path-context)
