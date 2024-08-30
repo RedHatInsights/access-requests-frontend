@@ -196,7 +196,7 @@ spec:
           - name: url
             value: https://github.com/RedHatInsights/konflux-consoledot-frontend-build
           - name: revision
-            value: 6ca6bf7cbbe1dd25a5b8e50ebb832041533bf4b3
+            value: a9141c06476e4c259b7918328e123cdec83c823d
           - name: pathInRepo
             value: tasks/parse-build-deploy-script/parse-build-deploy-script.yaml
       workspaces:
@@ -211,7 +211,7 @@ spec:
           - name: url
             value: https://github.com/RedHatInsights/konflux-consoledot-frontend-build
           - name: revision
-            value: 6ca6bf7cbbe1dd25a5b8e50ebb832041533bf4b3
+            value: a9141c06476e4c259b7918328e123cdec83c823d
           - name: pathInRepo
             value: tasks/create-frontend-dockerfile/create-frontend-dockerfile.yaml
       workspaces:
@@ -245,7 +245,7 @@ spec:
         - name: dist-folder
           value: $(tasks.parse-build-deploy-script.results.dist-folder)
       runAfter:
-        - parse-build-deploy-script
+      - parse-build-deploy-script
     - name: build-container
       params:
       - name: IMAGE
