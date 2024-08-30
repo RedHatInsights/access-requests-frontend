@@ -199,6 +199,9 @@ spec:
             value: a9141c06476e4c259b7918328e123cdec83c823d
           - name: pathInRepo
             value: tasks/parse-build-deploy-script/parse-build-deploy-script.yaml
+      workspaces:
+      - name: source
+        workspace: workspace
       runAfter:
       - clone-repository
     - name: create-frontend-dockerfile
@@ -238,6 +241,9 @@ spec:
           value: $(tasks.parse-build-deploy-script.results.server-name)
         - name: dist-folder
           value: $(tasks.parse-build-deploy-script.results.dist-folder)
+      workspaces:
+      - name: source
+        workspace: workspace
       runAfter:
       - parse-build-deploy-script
     - name: build-container
@@ -490,6 +496,7 @@ spec:
           value: task
         resolver: bundles
     workspaces:
+    - name: workspace
     - name: git-auth
       optional: true
     - name: netrc
