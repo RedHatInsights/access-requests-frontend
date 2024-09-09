@@ -7,6 +7,11 @@
 export COMPONENT="access-requests"
 # Needs to match the quay repo name set by app.yaml in app-interface
 export IMAGE="quay.io/cloudservices/access-requests"
+
+if [[ "$GIT_BRANCH" == "origin/security-compliance" ]]; then
+	export IMAGE_TAG="sc-$(date +%Y%m%d)-$(git rev-parse --short=7 HEAD)"
+fi
+
 export WORKSPACE=${WORKSPACE:-$APP_ROOT} # if running in jenkins, use the build's workspace
 export APP_ROOT=$(pwd)
 COMMON_BUILDER=https://raw.githubusercontent.com/RedHatInsights/insights-frontend-builder-common/master
