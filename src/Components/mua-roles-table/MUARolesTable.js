@@ -86,7 +86,9 @@ const MUARolesTable = ({
         ? row.applications.find((app) => appSelections.includes(app))
         : true
     )
-    .filter((row) => row.name.toLowerCase().includes(nameFilter))
+    .filter((row) =>
+      row.display_name.toLowerCase().includes(nameFilter.toLowerCase())
+    )
     .filter((row) =>
       isReadOnly ? selectedNames.includes(row.display_name) : true
     );
