@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 export interface UserData {
   ready: boolean;
   isInternal?: boolean;
+  isOrgAdmin?: boolean;
 }
 
 const useUserData = () => {
@@ -19,6 +20,7 @@ const useUserData = () => {
         setUserData({
           ready: true,
           isInternal: user?.identity?.user?.is_internal,
+          isOrgAdmin: user?.identity?.user?.is_org_admin,
         });
       });
   }, [chrome, userData.ready]);

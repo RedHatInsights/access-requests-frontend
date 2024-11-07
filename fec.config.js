@@ -3,7 +3,7 @@ const plugins = require('./config/plugins.js');
 module.exports = {
   appUrl: [
     '/internal/access-requests',
-    '/settings/rbac/access-requests',
+    '/iam/user-access/access-requests',
     '/internal',
   ],
   debug: true,

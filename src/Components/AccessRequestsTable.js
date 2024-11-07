@@ -38,6 +38,8 @@ import { Link } from 'react-router-dom';
 import { getInternalActions, StatusLabel } from '../Helpers/getActions';
 import PropTypes from 'prop-types';
 import apiInstance from '../Helpers/apiInstance';
+import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
+import useUserData from '../Hooks/useUserData';
 
 const uncapitalize = (input) => input[0].toLowerCase() + input.substring(1);
 
@@ -149,15 +151,24 @@ const AccessRequestsTable = ({ isInternal }) => {
   const [numRows, setNumRows] = React.useState(0);
   const [rows, setRows] = React.useState([]);
   const dispatch = useDispatch();
+
+  //is Org admin loading
+  const { isOrgAdmin } = useUserData();
+  const { getBundleData } = useChrome();
+
   const fetchAccessRequests = () => {
     setIsLoading(true);
     const listUrl = new URL(
       `${window.location.origin}${API_BASE}/cross-account-requests/`
     );
 
-    isInternal
-      ? listUrl.searchParams.append('query_by', 'user_id')
-      : listUrl.searchParams.append('query_by', 'target_org');
+    if (isInternal) {
+      getBundleData() === 'iam' && isOrgAdmin
+        ? listUrl.searchParams.append('query_by', 'target_org')
+        : listUrl.searchParams.append('query_by', 'user_id');
+    } else {
+      listUrl.searchParams.append('query_by', 'target_org');
+    }
 
     listUrl.searchParams.append('offset', (page - 1) * perPage);
     listUrl.searchParams.append('limit', perPage);
