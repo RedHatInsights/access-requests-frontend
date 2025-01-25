@@ -13,6 +13,8 @@ import {
   ACCESS_FROM,
   ACCESS_TO,
   ACCOUNT_NUMBER,
+  FIRST_NAME,
+  LAST_NAME,
   SELECTED_ROLES,
 } from './schema';
 import './review-details.scss';
@@ -24,6 +26,23 @@ const ReviewDetails = () => {
   return (
     <React.Fragment>
       <Stack className="accessRequests">
+        <StackItem className="pf-v5-u-mb-md">
+          <Grid>
+            <GridItem sm={12} md={2}>
+              <Text
+                component={TextVariants.h4}
+                className="access-requests-bold-text"
+              >
+                Account name
+              </Text>
+            </GridItem>
+            <GridItem sm={12} md={10}>
+              <Text component={TextVariants.p}>
+                {values[FIRST_NAME] + ' ' + values[LAST_NAME]}
+              </Text>
+            </GridItem>
+          </Grid>
+        </StackItem>
         <StackItem className="pf-v5-u-mb-md">
           <Grid>
             <GridItem sm={12} md={2}>

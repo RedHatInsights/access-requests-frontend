@@ -35,7 +35,7 @@ import PlusCircleIcon from '@patternfly/react-icons/dist/js/icons/plus-circle-ic
 import { useDispatch } from 'react-redux';
 import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
 import { Link } from 'react-router-dom';
-import { getInternalActions, StatusLabel } from '../Helpers/getActions';
+import { StatusLabel } from '../Helpers/getActions';
 import PropTypes from 'prop-types';
 import apiInstance from '../Helpers/apiInstance';
 import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
@@ -83,6 +83,7 @@ const AccessRequestsTable = ({ isInternal }) => {
     ? [
         'Request ID',
         'Account number',
+        'Account name',
         'Start date',
         'End date',
         'Created',
@@ -165,7 +166,7 @@ const AccessRequestsTable = ({ isInternal }) => {
     if (isInternal) {
       getBundleData() === 'iam' && isOrgAdmin
         ? listUrl.searchParams.append('query_by', 'target_org')
-        : listUrl.searchParams.append('query_by', 'user_id');
+        : listUrl.searchParams.append('query_by', 'target_org');
     } else {
       listUrl.searchParams.append('query_by', 'target_org');
     }
@@ -196,6 +197,7 @@ const AccessRequestsTable = ({ isInternal }) => {
               ? [
                   d.request_id,
                   d.target_account,
+                  d.first_name + ' ' + d.last_name,
                   d.start_date,
                   d.end_date,
                   d.created,
@@ -229,6 +231,7 @@ const AccessRequestsTable = ({ isInternal }) => {
   React.useEffect(() => {
     fetchAccessRequests();
   }, [
+    isInternal,
     debouncedAccountFilter,
     statusSelections,
     activeSortIndex,
@@ -514,10 +517,13 @@ const AccessRequestsTable = ({ isInternal }) => {
                   <Td dataLabel={columns[5]}>{row[5]}</Td>
                 )}
                 {isInternal ? (
-                  // Different actions based on status
-                  <Td
-                    actions={getInternalActions(row[5], row[0], setOpenModal)}
-                  />
+                  <Td dataLabel={columns[6]}>
+                    <StatusLabel
+                      requestId={row[0]}
+                      status={row[6]}
+                      hideActions={true}
+                    />
+                  </Td>
                 ) : (
                   <Td dataLabel={columns[6]}>
                     <StatusLabel requestId={row[0]} status={row[6]} />

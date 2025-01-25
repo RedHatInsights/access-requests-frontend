@@ -4,6 +4,8 @@ import validatorTypes from '@data-driven-forms/react-form-renderer/validator-typ
 import componentTypes from '@data-driven-forms/react-form-renderer/component-types';
 import InputHelpPopover from '../common/InputHelpPopover';
 
+export const FIRST_NAME = 'first-name';
+export const LAST_NAME = 'last-name';
 export const ACCOUNT_NUMBER = 'account-number';
 export const ORG_ID = 'org-id';
 export const ACCESS_FROM = 'start';
