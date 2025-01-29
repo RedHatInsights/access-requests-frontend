@@ -7,6 +7,7 @@ Since most components are only slightly tweaked between the requester (aka inter
 The list and details pages are exported as federated modules for use in [rbac-ui.](https://github.com/RedHatInsights/insights-rbac-ui)
 
 ## Developing
+
 1. `npm install`
 
 ### [Insights-standalone](https://github.com/RedHatInsights/insights-standalone)
