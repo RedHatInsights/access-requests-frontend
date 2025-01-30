@@ -166,7 +166,7 @@ const AccessRequestsTable = ({ isInternal }) => {
     if (isInternal) {
       getBundleData() === 'iam' && isOrgAdmin
         ? listUrl.searchParams.append('query_by', 'target_org')
-        : listUrl.searchParams.append('query_by', 'target_org');
+        : listUrl.searchParams.append('query_by', 'user_id');
     } else {
       listUrl.searchParams.append('query_by', 'target_org');
     }
