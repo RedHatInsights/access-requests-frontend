@@ -197,7 +197,9 @@ const AccessRequestsTable = ({ isInternal }) => {
               ? [
                   d.request_id,
                   d.target_account,
-                  d.first_name + ' ' + d.last_name,
+                  (d.first_name || '') +
+                    (d.last_name ? ' ' : '') +
+                    (d.last_name || ''),
                   d.start_date,
                   d.end_date,
                   d.created,
