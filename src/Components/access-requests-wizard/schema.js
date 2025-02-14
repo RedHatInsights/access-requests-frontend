@@ -6,7 +6,6 @@ import InputHelpPopover from '../common/InputHelpPopover';
 
 export const FIRST_NAME = 'first-name';
 export const LAST_NAME = 'last-name';
-export const ACCOUNT_NUMBER = 'account-number';
 export const ORG_ID = 'org-id';
 export const ACCESS_FROM = 'start';
 export const ACCESS_TO = 'end';
@@ -36,29 +35,6 @@ export default (isEdit, variant) => ({
                   type: validatorTypes.REQUIRED,
                 },
               ],
-            },
-            {
-              component: componentTypes.TEXT_FIELD,
-              isRequired: true,
-              label: 'Account number',
-              isDisabled: isEdit,
-              placeholder: 'Example, 8675309',
-              FormGroupProps: {
-                labelIcon: (
-                  <InputHelpPopover
-                    bodyContent={
-                      <p>
-                        This is the account number that you would like to
-                        receive read access to
-                      </p>
-                    }
-                    field="account number"
-                  />
-                ),
-              },
-              helperText: 'Enter the account number you would like access to',
-              name: ACCOUNT_NUMBER,
-              validate: [{ type: 'validate-account' }],
             },
             {
               component: componentTypes.TEXT_FIELD,

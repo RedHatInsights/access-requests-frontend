@@ -71,7 +71,7 @@ const BaseAccessRequestDetailsPage = ({ isInternal }) => {
 
   const requestDisplayProps = [
     ...(isInternal
-      ? ['request_id', 'target_account', 'target_org']
+      ? ['request_id', 'target_org']
       : ['first_name', 'last_name']),
     'start_date',
     'end_date',

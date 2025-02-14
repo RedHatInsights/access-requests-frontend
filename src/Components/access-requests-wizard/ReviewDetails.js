@@ -12,7 +12,6 @@ import PropTypes from 'prop-types';
 import {
   ACCESS_FROM,
   ACCESS_TO,
-  ACCOUNT_NUMBER,
   FIRST_NAME,
   LAST_NAME,
   SELECTED_ROLES,
@@ -40,21 +39,6 @@ const ReviewDetails = () => {
               <Text component={TextVariants.p}>
                 {values[FIRST_NAME] + ' ' + values[LAST_NAME]}
               </Text>
-            </GridItem>
-          </Grid>
-        </StackItem>
-        <StackItem className="pf-v5-u-mb-md">
-          <Grid>
-            <GridItem sm={12} md={2}>
-              <Text
-                component={TextVariants.h4}
-                className="access-requests-bold-text"
-              >
-                Account number
-              </Text>
-            </GridItem>
-            <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{values[ACCOUNT_NUMBER]}</Text>
             </GridItem>
           </Grid>
         </StackItem>
