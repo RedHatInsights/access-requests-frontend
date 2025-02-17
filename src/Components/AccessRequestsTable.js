@@ -6,7 +6,6 @@ import {
   ToolbarContent,
   Button,
   InputGroup,
-  TextInput,
   Pagination,
   ChipGroup,
   Chip,
@@ -43,46 +42,12 @@ import useUserData from '../Hooks/useUserData';
 
 const uncapitalize = (input) => input[0].toLowerCase() + input.substring(1);
 
-// https://dev.to/gabe_ragland/debouncing-with-react-hooks-jci
-function useDebounce(value, delay) {
-  // State and setters for debounced value
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
-
-  React.useEffect(
-    () => {
-      // Set debouncedValue to value (passed in) after the specified delay
-      const handler = setTimeout(() => {
-        setDebouncedValue(value);
-      }, delay);
-
-      // Return a cleanup function that will be called every time ...
-      // ... useEffect is re-called. useEffect will only be re-called ...
-      // ... if value changes (see the inputs array below).
-      // This is how we prevent debouncedValue from changing if value is ...
-      // ... changed within the delay period. Timeout gets cleared and restarted.
-      // To put it in context, if the user is typing within our app's ...
-      // ... search box, we don't want the debouncedValue to update until ...
-      // ... they've stopped typing for more than 500ms.
-      return () => {
-        clearTimeout(handler);
-      };
-    },
-    // Only re-call effect if value changes
-    // You could also add the "delay" var to inputs array if you ...
-    // ... need to be able to change that dynamically.
-    [value]
-  );
-
-  return debouncedValue;
-}
-
 const statuses = ['pending', 'approved', 'denied', 'cancelled', 'expired'];
 
 const AccessRequestsTable = ({ isInternal }) => {
   const columns = isInternal
     ? [
         'Request ID',
-        'Account number',
         'Account name',
         'Start date',
         'End date',
@@ -101,7 +66,7 @@ const AccessRequestsTable = ({ isInternal }) => {
 
   // Sorting
   const [activeSortIndex, setActiveSortIndex] = React.useState(
-    isInternal ? 4 : 5
+    isInternal ? 3 : 5
   );
   const [activeSortDirection, setActiveSortDirection] = React.useState('desc');
   const onSort = (_ev, index, direction) => {
@@ -136,17 +101,15 @@ const AccessRequestsTable = ({ isInternal }) => {
   // Filtering
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
   const [filterColumn, setFilterColumn] = React.useState(
-    columns[isInternal ? 1 : 6]
+    columns[isInternal ? 5 : 6]
   );
   const [isSelectOpen, setIsSelectOpen] = React.useState(false);
   const [statusSelections, setStatusSelections] = React.useState([]);
 
   // Harder than it needs to be to match rest of RBAC which doesn't wait
   // for user to click a button or press enter.
-  const [accountFilter, setAccountFilter] = React.useState('');
   const [filtersDirty, setFiltersDirty] = React.useState(false);
-  const hasFilters = statusSelections.length > 0 || accountFilter;
-
+  const hasFilters = statusSelections.length > 0;
   // Row loading
   const [isLoading, setIsLoading] = React.useState(true);
   const [numRows, setNumRows] = React.useState(0);
@@ -174,9 +137,6 @@ const AccessRequestsTable = ({ isInternal }) => {
     listUrl.searchParams.append('offset', (page - 1) * perPage);
     listUrl.searchParams.append('limit', perPage);
     // https://github.com/RedHatInsights/insights-rbac/blob/master/rbac/api/cross_access/view.py
-    if (accountFilter) {
-      listUrl.searchParams.append('account', accountFilter);
-    }
     if (statusSelections.length > 0) {
       listUrl.searchParams.append('status', statusSelections.join(','));
     }
@@ -196,7 +156,6 @@ const AccessRequestsTable = ({ isInternal }) => {
             isInternal
               ? [
                   d.request_id,
-                  d.target_account,
                   (d.first_name || '') +
                     (d.last_name ? ' ' : '') +
                     (d.last_name || ''),
@@ -229,12 +188,10 @@ const AccessRequestsTable = ({ isInternal }) => {
         );
       });
   };
-  const debouncedAccountFilter = useDebounce(accountFilter, 400);
   React.useEffect(() => {
     fetchAccessRequests();
   }, [
     isInternal,
-    debouncedAccountFilter,
     statusSelections,
     activeSortIndex,
     activeSortDirection,
@@ -310,7 +267,6 @@ const AccessRequestsTable = ({ isInternal }) => {
       variant="link"
       onClick={() => {
         setStatusSelections([]);
-        setAccountFilter('');
         setPage(1);
       }}
     >
@@ -338,10 +294,10 @@ const AccessRequestsTable = ({ isInternal }) => {
                     <FilterIcon /> {filterColumn}
                   </DropdownToggle>
                 }
-                dropdownItems={(isInternal ? [1, 5] : [6])
+                dropdownItems={(isInternal ? [5] : [6])
                   .map((i) => columns[i])
                   .map((colName) => (
-                    // Filterable columns are RequestID, AccountID, and Status
+                    // Filterable columns are RequestID and Status
                     <DropdownItem
                       key={colName}
                       value={colName}
@@ -386,24 +342,6 @@ const AccessRequestsTable = ({ isInternal }) => {
                 </Select>
               </React.Fragment>
             )}
-            {filterColumn === 'Account number' && (
-              <form
-                style={{ display: 'flex' }}
-                onSubmit={(ev) => ev.preventDefault()}
-              >
-                <TextInput
-                  name={`${filterColumn}-filter`}
-                  id={`${filterColumn}-filter`}
-                  type="search"
-                  placeholder={`Filter by ${uncapitalize(filterColumn)}`}
-                  aria-label={`${filterColumn} search input`}
-                  value={accountFilter}
-                  onChange={(_event, val) => {
-                    setAccountFilter(val), setFiltersDirty(true), setPage(1);
-                  }}
-                />
-              </form>
-            )}
           </InputGroup>
         </ToolbarItem>
         <ToolbarItem>{createButton}</ToolbarItem>
@@ -427,17 +365,6 @@ const AccessRequestsTable = ({ isInternal }) => {
             </Chip>
           ))}
         </ChipGroup>
-        {accountFilter && (
-          <ChipGroup categoryName="Account number">
-            <Chip
-              onClick={() => {
-                setAccountFilter(''), setPage(1);
-              }}
-            >
-              {accountFilter}
-            </Chip>
-          </ChipGroup>
-        )}
         {hasFilters && clearFiltersButton}
       </ToolbarContent>
     </Toolbar>
