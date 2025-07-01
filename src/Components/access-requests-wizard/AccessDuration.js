@@ -17,11 +17,15 @@ const AccessDuration = () => {
   const formOptions = useFormApi();
   const values = formOptions.getState().values;
   const [startDate, setStartDate] = React.useState();
-  const [endError, setEndError] = React.useState();
-  const [startError, setStartError] = React.useState();
+  const [currentStartValue, setCurrentStartValue] = React.useState('');
+  const [currentEndValue, setCurrentEndValue] = React.useState('');
 
-  const today = new Date();
-  today.setDate(today.getDate() - 1);
+  // Sync current values with form values on mount and updates
+  React.useEffect(() => {
+    setCurrentStartValue(values[ACCESS_FROM] || '');
+    setCurrentEndValue(values[ACCESS_TO] || '');
+  }, [values[ACCESS_FROM], values[ACCESS_TO]]);
+
   const maxStartDate = new Date();
   maxStartDate.setDate(maxStartDate.getDate() + 60);
 
@@ -50,58 +54,185 @@ const AccessDuration = () => {
 
   const startValidator = (date) => {
     if (isValidDate(date)) {
-      if (date < today) {
+      // Check if date is before today (start of day)
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const dateStart = new Date(date);
+      dateStart.setHours(0, 0, 0, 0);
+
+      if (dateStart < todayStart) {
         const message = 'Start date must be today or later';
-        setStartError(message);
         return message;
       }
       if (date > maxStartDate) {
         const message = 'Start date must be within 60 days of today';
-        setStartError(message);
         return message;
       }
     }
-    setStartError();
     return '';
   };
 
   const endValidator = (date) => {
-    setEndError();
     if (isValidDate(startDate)) {
       if (startDate > date) {
         const message = 'End date must be after start date';
-        setEndError(message);
         return message;
       }
 
       const maxToDate = new Date(startDate);
       maxToDate.setFullYear(maxToDate.getFullYear() + 1);
       const message = 'Access duration may not be longer than one year';
-      date > maxToDate && setEndError(message);
       return date > maxToDate ? message : '';
     }
-    setEndError();
     return '';
+  };
+
+  // Calendar validator functions for PatternFly DatePicker
+  // These disable invalid dates in the calendar dropdown
+  const startCalendarValidator = (date) => {
+    if (!isValidDate(date)) return '';
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const dateStart = new Date(date);
+    dateStart.setHours(0, 0, 0, 0);
+
+    if (dateStart < todayStart) {
+      return 'Date is in the past';
+    }
+    if (date > maxStartDate) {
+      return 'Date is beyond 60-day limit';
+    }
+    return '';
+  };
+
+  const endCalendarValidator = (date) => {
+    if (!isValidDate(date) || !isValidDate(startDate)) return '';
+
+    if (date <= startDate) {
+      return 'Date must be after start date';
+    }
+
+    const maxToDate = new Date(startDate);
+    maxToDate.setFullYear(maxToDate.getFullYear() + 1);
+
+    if (date > maxToDate) {
+      return 'Date exceeds one year limit';
+    }
+    return '';
+  };
+
+  // Helper functions to determine validation rule status
+  const getStartDateTodayStatus = () => {
+    const startValue = currentStartValue || values[ACCESS_FROM];
+    if (!startValue || !isCorrectFormat(startValue)) return 'indeterminate';
+
+    const parsedDate = dateParse(startValue);
+    if (!parsedDate) return 'indeterminate';
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const dateStart = new Date(parsedDate);
+    dateStart.setHours(0, 0, 0, 0);
+
+    return dateStart >= todayStart ? 'success' : 'error';
+  };
+
+  const getStartDateSixtyDayStatus = () => {
+    const startValue = currentStartValue || values[ACCESS_FROM];
+    if (!startValue || !isCorrectFormat(startValue)) return 'indeterminate';
+
+    const parsedDate = dateParse(startValue);
+    if (!parsedDate) return 'indeterminate';
+
+    return parsedDate <= maxStartDate ? 'success' : 'error';
+  };
+
+  const getStartDateFormatStatus = () => {
+    const startValue = currentStartValue || values[ACCESS_FROM];
+    if (!startValue) return 'indeterminate';
+
+    return isCorrectFormat(startValue) ? 'success' : 'error';
+  };
+
+  const getEndDateAfterStartStatus = () => {
+    const endValue = currentEndValue || values[ACCESS_TO];
+    const startValue = currentStartValue || values[ACCESS_FROM];
+
+    if (
+      !endValue ||
+      !isCorrectFormat(endValue) ||
+      !startValue ||
+      !isCorrectFormat(startValue)
+    ) {
+      return 'indeterminate';
+    }
+
+    const parsedEndDate = dateParse(endValue);
+    const parsedStartDate = dateParse(startValue);
+
+    if (!parsedEndDate || !parsedStartDate) return 'indeterminate';
+
+    return parsedEndDate > parsedStartDate ? 'success' : 'error';
+  };
+
+  const getEndDateOneYearStatus = () => {
+    const endValue = currentEndValue || values[ACCESS_TO];
+    const startValue = currentStartValue || values[ACCESS_FROM];
+
+    if (
+      !endValue ||
+      !isCorrectFormat(endValue) ||
+      !startValue ||
+      !isCorrectFormat(startValue)
+    ) {
+      return 'indeterminate';
+    }
+
+    const parsedEndDate = dateParse(endValue);
+    const parsedStartDate = dateParse(startValue);
+
+    if (!parsedEndDate || !parsedStartDate) return 'indeterminate';
+
+    const maxToDate = new Date(parsedStartDate);
+    maxToDate.setFullYear(maxToDate.getFullYear() + 1);
+
+    return parsedEndDate <= maxToDate ? 'success' : 'error';
+  };
+
+  const getEndDateFormatStatus = () => {
+    const endValue = currentEndValue || values[ACCESS_TO];
+    if (!endValue) return 'indeterminate';
+
+    return isCorrectFormat(endValue) ? 'success' : 'error';
   };
 
   const onStartChange = (_e, str, date) => {
     setStartDate(date ? new Date(date) : undefined);
-    formOptions.change(ACCESS_FROM, isCorrectFormat(str) ? str : '');
+    // Allow user to continue typing - only clear if completely invalid on blur
+    formOptions.change(ACCESS_FROM, str);
+
+    // Update local state to trigger re-render and update validation status
+    setCurrentStartValue(str);
+
     if (isValidDate(date) && !startValidator(date)) {
       date.setDate(date.getDate() + 7);
       formOptions.change(ACCESS_TO, dateFormat(date));
-      setEndError();
     }
   };
 
   const onEndChange = (_e, str, date) => {
-    if (endValidator(date) || !isCorrectFormat(str)) {
-      formOptions.change(ACCESS_TO, '');
-    } else {
-      formOptions.change(ACCESS_TO, str);
-      startValidator(startDate) &&
-        formOptions.change(ACCESS_FROM, '') &&
-        setStartError();
+    // Allow user to continue typing - only validate on blur
+    formOptions.change(ACCESS_TO, str);
+
+    // Update local state to trigger re-render and update validation status
+    setCurrentEndValue(str);
+
+    if (isValidDate(date) && !endValidator(date)) {
+      // Only auto-clear start date if there's a validation error with start date
+      if (startValidator(startDate)) {
+        formOptions.change(ACCESS_FROM, '');
+      }
     }
   };
 
@@ -130,25 +261,23 @@ const AccessDuration = () => {
             dateFormat={dateFormat}
             dateParse={dateParse}
             onChange={onStartChange}
-            validators={[startValidator]}
+            validators={[startCalendarValidator]}
             inputProps={{
-              onBlur: ({ target: { value } }) => onStartChange(value),
-              validated:
-                values[ACCESS_FROM] === '' ||
-                (values[ACCESS_FROM] && !isCorrectFormat(values[ACCESS_FROM]))
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default,
+              onBlur: ({ target: { value } }) => {
+                // Don't clear invalid input - let user see what they typed to correct it
+                if (value && !isCorrectFormat(value)) {
+                  // Invalid format - user will see validation in helper text
+                } else {
+                  // Run validation on properly formatted dates
+                  const parsedDate = dateParse(value);
+                  if (parsedDate) {
+                    startValidator(parsedDate);
+                  }
+                }
+              },
+              validated: ValidatedOptions.default, // Always show default since we have dynamic validation list
             }}
           />
-          {startError || values[ACCESS_FROM] === '' ? (
-            <HelperText>
-              <HelperTextItem variant="error">
-                {values[ACCESS_FROM] === ''
-                  ? 'Enter a valid date '
-                  : startError}
-              </HelperTextItem>
-            </HelperText>
-          ) : null}
         </SplitItem>
         <SplitItem className="pf-v5-u-mt-sm">to</SplitItem>
         <SplitItem>
@@ -159,25 +288,75 @@ const AccessDuration = () => {
             dateFormat={dateFormat}
             dateParse={dateParse}
             onChange={onEndChange}
-            validators={[endValidator]}
+            validators={[endCalendarValidator]}
             inputProps={{
-              onBlur: ({ target: { value } }) => onEndChange(value),
-              validated:
-                values[ACCESS_TO] === '' ||
-                (values[ACCESS_TO] && !isCorrectFormat(values[ACCESS_TO]))
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default,
+              onBlur: ({ target: { value } }) => {
+                // Don't clear invalid input - let user see what they typed to correct it
+                if (value && !isCorrectFormat(value)) {
+                  // Invalid format - user will see validation in helper text
+                } else {
+                  // Run end date validation
+                  const parsedDate = dateParse(value);
+                  if (parsedDate) {
+                    endValidator(parsedDate);
+                  }
+                }
+              },
+              validated: ValidatedOptions.default, // Always show default since we have dynamic validation list
             }}
           />
-          {endError || values[ACCESS_TO] === '' ? (
-            <HelperText>
-              <HelperTextItem variant="error">
-                {values[ACCESS_FROM] === '' ? 'Enter a valid date ' : endError}
-              </HelperTextItem>
-            </HelperText>
-          ) : null}
         </SplitItem>
       </Split>
+
+      {/* Dynamic validation rules helper text with icons */}
+      <HelperText
+        component="ul"
+        aria-label="Validation rules for access duration"
+        className="pf-v5-u-mt-md"
+      >
+        <HelperTextItem
+          variant={getStartDateFormatStatus()}
+          component="li"
+          hasIcon
+        >
+          Start date must be in mm/dd/yyyy format
+        </HelperTextItem>
+        <HelperTextItem
+          variant={getStartDateTodayStatus()}
+          component="li"
+          hasIcon
+        >
+          Start date must be today or later
+        </HelperTextItem>
+        <HelperTextItem
+          variant={getStartDateSixtyDayStatus()}
+          component="li"
+          hasIcon
+        >
+          Start date must be within 60 days of today
+        </HelperTextItem>
+        <HelperTextItem
+          variant={getEndDateFormatStatus()}
+          component="li"
+          hasIcon
+        >
+          End date must be in mm/dd/yyyy format
+        </HelperTextItem>
+        <HelperTextItem
+          variant={getEndDateAfterStartStatus()}
+          component="li"
+          hasIcon
+        >
+          End date must be after start date
+        </HelperTextItem>
+        <HelperTextItem
+          variant={getEndDateOneYearStatus()}
+          component="li"
+          hasIcon
+        >
+          Access duration may not be longer than one year
+        </HelperTextItem>
+      </HelperText>
     </FormGroup>
   );
 };

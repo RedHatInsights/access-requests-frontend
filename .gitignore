@@ -23,3 +23,6 @@ coverage
 TODO
 
 .cache/
+
+*storybook.log
+storybook-static
