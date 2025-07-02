@@ -2,17 +2,17 @@ import React from 'react';
 import { Modal, Button, Spinner } from '@patternfly/react-core';
 import { useCancelRequest } from './access-requests-wizard/hooks/useCancelRequest';
 
-interface CancelRequestModalProps {
-  requestId: string;
+interface CancelRequestModalViewProps {
+  isLoading: boolean;
+  onCancel: () => void;
   onClose: (isChanged: boolean) => void;
 }
 
-const CancelRequestModal: React.FC<CancelRequestModalProps> = ({
-  requestId,
+export const CancelRequestModalView: React.FC<CancelRequestModalViewProps> = ({
+  isLoading,
+  onCancel,
   onClose,
 }) => {
-  const { isLoading, onCancel } = useCancelRequest({ requestId, onClose });
-
   return (
     <Modal
       variant="small"
@@ -36,6 +36,26 @@ const CancelRequestModal: React.FC<CancelRequestModalProps> = ({
       Are you sure you want to cancel this request? This action cannot be
       undone.
     </Modal>
+  );
+};
+
+interface CancelRequestModalProps {
+  requestId: string;
+  onClose: (isChanged: boolean) => void;
+}
+
+const CancelRequestModal: React.FC<CancelRequestModalProps> = ({
+  requestId,
+  onClose,
+}) => {
+  const { isLoading, onCancel } = useCancelRequest({ requestId, onClose });
+
+  return (
+    <CancelRequestModalView
+      isLoading={isLoading}
+      onCancel={onCancel}
+      onClose={onClose}
+    />
   );
 };
 

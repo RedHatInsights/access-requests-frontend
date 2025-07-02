@@ -38,6 +38,54 @@ import { useAccessRequestsData } from './hooks/useAccessRequestsData';
 import { useAccessRequestsFiltering } from './hooks/useAccessRequestsFiltering';
 import { useDebounce } from './hooks/useDebounce';
 
+interface AccessRequestsPaginationViewProps {
+  /** Total number of items */
+  itemCount: number;
+  /** Number of items per page */
+  perPage: number;
+  /** Current page number */
+  page: number;
+  /** Callback when page is changed */
+  onSetPage: (page: number) => void;
+  /** Callback when items per page is changed */
+  onPerPageSelect: (perPage: number) => void;
+  /** Unique identifier for the pagination instance */
+  id: string;
+  /** Whether to show compact pagination controls */
+  isCompact: boolean;
+}
+
+/**
+ * Pure presentational component for access requests table pagination.
+ * Provides standard pagination controls with configurable per-page options.
+ */
+export function AccessRequestsPaginationView({
+  itemCount,
+  perPage,
+  page,
+  onSetPage,
+  onPerPageSelect,
+  id,
+  isCompact,
+}: AccessRequestsPaginationViewProps): React.ReactElement {
+  return (
+    <Pagination
+      itemCount={itemCount}
+      perPage={perPage}
+      page={page}
+      onSetPage={(_event, pageNumber) => onSetPage(pageNumber)}
+      id={`access-requests-table-pagination-${id}`}
+      variant={id as any}
+      perPageOptions={[5, 10, 20, 50].map((n) => ({
+        title: String(n),
+        value: n,
+      }))}
+      onPerPageSelect={(_event, newPerPage) => onPerPageSelect(newPerPage)}
+      isCompact={isCompact}
+    />
+  );
+}
+
 const uncapitalize = (input: string): string =>
   input[0].toLowerCase() + input.substring(1);
 
@@ -138,21 +186,16 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
   // Pagination component
   const AccessRequestsPagination: React.FC<{ id: string }> = React.memo(
     ({ id }) => (
-      <Pagination
+      <AccessRequestsPaginationView
         itemCount={numRows}
         perPage={perPage}
         page={page}
-        onSetPage={(_event, pageNumber) => setPage(pageNumber)}
-        id={`access-requests-table-pagination-${id}`}
-        variant={id as any}
-        perPageOptions={[5, 10, 20, 50].map((n) => ({
-          title: String(n),
-          value: n,
-        }))}
-        onPerPageSelect={(_event, newPerPage) => {
+        onSetPage={setPage}
+        onPerPageSelect={(newPerPage: number) => {
           setPage(1);
           setPerPage(newPerPage);
         }}
+        id={id}
         isCompact={id === 'top'}
       />
     )

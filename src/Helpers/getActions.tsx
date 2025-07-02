@@ -48,6 +48,86 @@ export function getInternalActions(
   return { items, disable: items.length === 0 };
 }
 
+interface StatusLabelViewProps {
+  /** The current status of the access request */
+  status: AccessRequestStatus;
+
+  /**
+   * Controls whether action buttons are displayed:
+   * - `false` (default): Shows approve/deny buttons for pending requests, edit button for decided requests
+   * - `true`: Shows only the status label (read-only mode, typically for internal views)
+   */
+  hideActions?: boolean;
+
+  /** Whether the component is in editing mode */
+  isEditing?: boolean;
+
+  /** Whether a status update is in progress */
+  isLoading?: boolean;
+
+  /** Callback to set editing mode */
+  onSetEditing?: (editing: boolean) => void;
+
+  /** Callback to update status */
+  onUpdateStatus?: (newStatus: AccessRequestStatus) => void;
+}
+
+/**
+ * Pure presentational component for status labels with optional actions
+ * Perfect for Storybook testing of all status states and interactions
+ */
+export function StatusLabelView({
+  status,
+  hideActions = false,
+  isEditing = false,
+  isLoading = false,
+  onSetEditing = () => {},
+  onUpdateStatus = () => {},
+}: StatusLabelViewProps): React.ReactElement {
+  const label = <Label {...getLabelProps(status)}>{capitalize(status)}</Label>;
+
+  // For internal view - just show the label
+  if (hideActions) {
+    return label;
+  }
+
+  return (
+    <React.Fragment>
+      {isEditing || status === 'pending' ? (
+        <React.Fragment>
+          <Button
+            className="pf-v5-u-mr-md"
+            isDisabled={isLoading || status === 'approved'}
+            variant="primary"
+            onClick={() => onUpdateStatus('approved')}
+          >
+            Approve
+          </Button>
+          <Button
+            className="pf-v5-u-mr-md"
+            isDisabled={isLoading || status === 'denied'}
+            variant="danger"
+            onClick={() => onUpdateStatus('denied')}
+          >
+            Deny
+          </Button>
+        </React.Fragment>
+      ) : (
+        label
+      )}
+      {['approved', 'denied'].includes(status) && (
+        <Button
+          variant="plain"
+          aria-label="Edit status"
+          onClick={() => onSetEditing(!isEditing)}
+        >
+          <EditAltIcon />
+        </Button>
+      )}
+    </React.Fragment>
+  );
+}
+
 interface StatusLabelProps {
   /** The unique identifier of the access request */
   requestId: string;
@@ -78,46 +158,14 @@ export function StatusLabel({
       initialStatus: statusProp,
     });
 
-  const label = <Label {...getLabelProps(status)}>{capitalize(status)}</Label>;
-
-  // For internal view - just show the label
-  if (hideActions) {
-    return label;
-  }
-
   return (
-    <React.Fragment>
-      {isEditing || status === 'pending' ? (
-        <React.Fragment>
-          <Button
-            className="pf-v5-u-mr-md"
-            isDisabled={isLoading || status === 'approved'}
-            variant="primary"
-            onClick={() => updateStatus('approved')}
-          >
-            Approve
-          </Button>
-          <Button
-            className="pf-v5-u-mr-md"
-            isDisabled={isLoading || status === 'denied'}
-            variant="danger"
-            onClick={() => updateStatus('denied')}
-          >
-            Deny
-          </Button>
-        </React.Fragment>
-      ) : (
-        label
-      )}
-      {['approved', 'denied'].includes(status) && (
-        <Button
-          variant="plain"
-          aria-label="Edit status"
-          onClick={() => setIsEditing(!isEditing)}
-        >
-          <EditAltIcon />
-        </Button>
-      )}
-    </React.Fragment>
+    <StatusLabelView
+      status={status}
+      hideActions={hideActions}
+      isEditing={isEditing}
+      isLoading={isLoading}
+      onSetEditing={setIsEditing}
+      onUpdateStatus={updateStatus}
+    />
   );
 }

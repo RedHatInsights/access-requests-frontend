@@ -9,10 +9,10 @@ import {
   ORG_ID,
   SELECTED_ROLES,
 } from '../schema';
+import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
 
 // Global variable declarations
 declare const API_BASE: string;
-declare const insights: any;
 
 interface User {
   first_name: string;
@@ -83,12 +83,13 @@ export const useAccessRequestWizard = ({
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
   const [user, setUser] = React.useState<User>();
+  const chrome = useChrome();
 
   // Load user data and request details (if editing)
   React.useEffect(() => {
     setIsLoading(true);
 
-    const userPromise = insights.chrome.auth.getUser();
+    const userPromise = chrome.auth.getUser();
     const detailsPromise =
       isEdit && requestId
         ? apiInstance.get(

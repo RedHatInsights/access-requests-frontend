@@ -28,30 +28,158 @@ import { getLabelProps } from '../Helpers/getLabelProps';
 import { getInternalActions } from '../Helpers/getActions';
 import { StatusLabel } from '../Helpers/getActions';
 import { useAccessRequestDetails } from './hooks/useAccessRequestDetails';
+import { AccessRequestStatus } from '../Helpers/getLabelProps';
 
-interface BaseAccessRequestDetailsPageProps {
+interface RequestDetailsCardViewProps {
+  /** Whether this is the internal (Red Hat employee) view */
   isInternal: boolean;
+  /** The access request status */
+  status: AccessRequestStatus;
+  /** The request ID (for external StatusLabel) */
+  requestId?: string;
+  /** The display properties to show */
+  displayProps: string[];
+  /** The request data object */
+  requestData: Record<string, any>;
+  /** Whether the component is in loading state */
+  isLoading?: boolean;
 }
 
-const BaseAccessRequestDetailsPage: React.FC<
-  BaseAccessRequestDetailsPageProps
-> = ({ isInternal }) => {
-  const {
-    request,
-    requestId,
-    openModal,
-    setOpenModal,
-    onModalClose,
-    isDropdownOpen,
-    setIsDropdownOpen,
-    requestDisplayProps,
-  } = useAccessRequestDetails({ isInternal });
+/**
+ * Pure presentational component for displaying request details in a card format.
+ * Shows different views for internal vs external users.
+ */
+export function RequestDetailsCardView({
+  isInternal,
+  status,
+  requestId,
+  displayProps,
+  requestData,
+  isLoading = false,
+}: RequestDetailsCardViewProps): React.ReactElement {
+  return (
+    <Card ouiaId="request-details" style={{ height: '100%' }}>
+      <CardTitle>
+        <Title headingLevel="h2" size="xl">
+          Request details
+        </Title>
+      </CardTitle>
+      <CardBody>
+        {isLoading ? (
+          <Spinner size="xl" />
+        ) : (
+          <React.Fragment>
+            <div className="pf-v5-u-pb-md">
+              {isInternal ? (
+                <div>
+                  <label>
+                    <b>Request status</b>
+                  </label>
+                  <br />
+                  <Label className="pf-v5-u-mt-sm" {...getLabelProps(status)}>
+                    {capitalize(status)}
+                  </Label>
+                </div>
+              ) : (
+                <React.Fragment>
+                  <label>
+                    <b>Request decision</b>
+                  </label>
+                  <br />
+                  <StatusLabel requestId={requestId!} status={status} />
+                </React.Fragment>
+              )}
+            </div>
+            {displayProps.map((prop, key) => (
+              <div className="pf-v5-u-pb-md" key={key}>
+                <label>
+                  <b>
+                    {capitalize(prop.replace(/_/g, ' ').replace('id', 'ID'))}
+                  </b>
+                </label>
+                <br />
+                <div>{requestData[prop]}</div>
+              </div>
+            ))}
+          </React.Fragment>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
 
+interface RequestDetailsCardProps {
+  isInternal: boolean;
+  request: any;
+  requestId: string;
+  displayProps: string[];
+}
+
+/**
+ * Connected component wrapper for RequestDetailsCardView
+ */
+function RequestDetailsCard({
+  isInternal,
+  request,
+  requestId,
+  displayProps,
+}: RequestDetailsCardProps): React.ReactElement {
+  return (
+    <RequestDetailsCardView
+      isInternal={isInternal}
+      status={request?.status || 'pending'}
+      requestId={requestId}
+      displayProps={displayProps}
+      requestData={request || {}}
+      isLoading={!request}
+    />
+  );
+}
+
+interface AccessRequestDetailsPageViewProps {
+  /** Whether this is the internal (Red Hat employee) view */
+  isInternal: boolean;
+  /** The request data object */
+  request: any;
+  /** The request ID */
+  requestId: string;
+  /** Properties to display in the request details card */
+  requestDisplayProps: string[];
+  /** Whether the actions dropdown is open */
+  isDropdownOpen: boolean;
+  /** Current open modal state */
+  openModal: { type: 'edit' | 'cancel' | null };
+  /** Callback when dropdown toggle is clicked */
+  onDropdownToggle: () => void;
+  /** Callback when modal is closed */
+  onModalClose: () => void;
+  /** Callback when actions are clicked */
+  onActionClick: (params: {
+    type: 'edit' | 'cancel';
+    requestId: string;
+  }) => void;
+}
+
+/**
+ * Pure presentational component for the access request details page.
+ * Shows the complete page layout with breadcrumbs, actions, and content sections.
+ */
+export function AccessRequestDetailsPageView({
+  isInternal,
+  request,
+  requestId,
+  requestDisplayProps,
+  isDropdownOpen,
+  openModal,
+  onDropdownToggle,
+  onModalClose,
+  onActionClick,
+}: AccessRequestDetailsPageViewProps): React.ReactElement {
   // Get actions for dropdown
   const actions = getInternalActions(
     request?.status || 'pending',
     requestId,
-    setOpenModal
+    onActionClick
   );
 
   return (
@@ -77,7 +205,7 @@ const BaseAccessRequestDetailsPage: React.FC<
                 position="right"
                 toggle={
                   <KebabToggle
-                    onToggle={() => setIsDropdownOpen(!isDropdownOpen)}
+                    onToggle={onDropdownToggle}
                     id="actions-toggle"
                   />
                 }
@@ -107,61 +235,12 @@ const BaseAccessRequestDetailsPage: React.FC<
             flex={{ default: 'flex_1' }}
             alignSelf={{ default: 'alignSelfStretch' }}
           >
-            <Card ouiaId="request-details" style={{ height: '100%' }}>
-              <CardTitle>
-                <Title headingLevel="h2" size="xl">
-                  Request details
-                </Title>
-              </CardTitle>
-              <CardBody>
-                {!request ? (
-                  <Spinner size="xl" />
-                ) : (
-                  <React.Fragment>
-                    <div className="pf-v5-u-pb-md">
-                      {isInternal ? (
-                        <div>
-                          <label>
-                            <b>Request status</b>
-                          </label>
-                          <br />
-                          <Label
-                            className="pf-v5-u-mt-sm"
-                            {...getLabelProps(request.status)}
-                          >
-                            {capitalize(request.status)}
-                          </Label>
-                        </div>
-                      ) : (
-                        <React.Fragment>
-                          <label>
-                            <b>Request decision</b>
-                          </label>
-                          <br />
-                          <StatusLabel
-                            requestId={requestId}
-                            status={request.status}
-                          />
-                        </React.Fragment>
-                      )}
-                    </div>
-                    {requestDisplayProps.map((prop, key) => (
-                      <div className="pf-v5-u-pb-md" key={key}>
-                        <label>
-                          <b>
-                            {capitalize(
-                              prop.replace(/_/g, ' ').replace('id', 'ID')
-                            )}
-                          </b>
-                        </label>
-                        <br />
-                        <div>{request[prop]}</div>
-                      </div>
-                    ))}
-                  </React.Fragment>
-                )}
-              </CardBody>
-            </Card>
+            <RequestDetailsCard
+              isInternal={isInternal}
+              request={request}
+              requestId={requestId}
+              displayProps={requestDisplayProps}
+            />
           </FlexItem>
           <FlexItem
             flex={{ default: 'flex_3' }}
@@ -196,6 +275,46 @@ const BaseAccessRequestDetailsPage: React.FC<
         />
       )}
     </React.Fragment>
+  );
+}
+
+const BaseAccessRequestDetailsPage: React.FC<{
+  isInternal: boolean;
+}> = ({ isInternal }) => {
+  const {
+    request,
+    requestId,
+    openModal,
+    setOpenModal,
+    onModalClose,
+    isDropdownOpen,
+    setIsDropdownOpen,
+    requestDisplayProps,
+  } = useAccessRequestDetails({ isInternal });
+
+  const handleDropdownToggle = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleActionClick = (params: {
+    type: 'edit' | 'cancel';
+    requestId: string;
+  }) => {
+    setOpenModal({ type: params.type });
+  };
+
+  return (
+    <AccessRequestDetailsPageView
+      isInternal={isInternal}
+      request={request}
+      requestId={requestId}
+      requestDisplayProps={requestDisplayProps}
+      isDropdownOpen={isDropdownOpen}
+      openModal={openModal}
+      onDropdownToggle={handleDropdownToggle}
+      onModalClose={onModalClose}
+      onActionClick={handleActionClick}
+    />
   );
 };
 

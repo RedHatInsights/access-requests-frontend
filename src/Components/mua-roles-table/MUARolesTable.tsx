@@ -18,9 +18,24 @@ import { useMUATableFiltering } from './hooks/useMUATableFiltering';
 import { useMUATablePagination } from './hooks/useMUATablePagination';
 import { useMUATableSelection } from './hooks/useMUATableSelection';
 import { useMUATableExpansion } from './hooks/useMUATableExpansion';
+import { useRoleToolbar } from './hooks/useRoleToolbar';
 
 interface SelectedRole {
   display_name: string;
+  [key: string]: any;
+}
+
+export interface MUARole {
+  uuid: string;
+  display_name: string;
+  name: string;
+  description: string;
+  applications: string[];
+  accessCount: number;
+  permissions: number;
+  isExpanded: boolean;
+  access?: string[][]; // Array of [application, resource, operation] tuples
+  groups_in_count?: number;
   [key: string]: any;
 }
 
@@ -45,65 +60,117 @@ interface MUARolesTableProps {
   setRoles?: (roles: string[]) => void;
 }
 
-const MUARolesTable: React.FC<MUARolesTableProps> = ({
-  roles: selectedRoles,
-  setRoles: setSelectedRoles,
-}) => {
-  const isReadOnly = setSelectedRoles === undefined;
+interface MUARolesTableViewProps {
+  /** Whether the table is in read-only mode */
+  isReadOnly: boolean;
+  /** All available roles data */
+  rows: MUARole[];
+  /** Available applications for filtering */
+  applications: string[];
+  /** Current page of data to display */
+  pagedRows: MUARole[];
+  /** Filtered rows (for counts and no results) */
+  filteredRows: MUARole[];
+  /** Total number of items per page */
+  perPage: number;
+  /** Current page number */
+  page: number;
+  /** Whether any rows are selected */
+  anySelected: boolean;
+  /** Whether the "select all" checkbox should be checked */
+  isChecked: boolean;
+  /** Error state message */
+  error: string | null;
+  /** Whether there are active filters */
+  hasFilters: boolean;
+  /** Current name filter value */
+  nameFilter: string;
+  /** Current application filter selections */
+  appSelections: string[];
+  /** Active sort column index */
+  activeSortIndex: number;
+  /** Active sort direction */
+  activeSortDirection: 'asc' | 'desc';
+  /** Selected role names */
+  selectedRoles: string[];
+  /** Callback when a row is selected/deselected */
+  onSelect?: (
+    event: React.FormEvent<HTMLInputElement>,
+    isSelected: boolean,
+    rowIndex: number
+  ) => void;
+  /** Callback to check if a row is selected */
+  getIsRowSelected?: (roleName: string) => boolean;
+  /** Callback when a role is expanded/collapsed */
+  onExpand: (role: MUARole) => void;
+  /** Callback to check if a role is expanded */
+  isRoleExpanded: (role: MUARole) => boolean;
+  /** Callback when sort is changed */
+  onSort: (
+    event: React.MouseEvent,
+    index: number,
+    direction: 'asc' | 'desc'
+  ) => void;
+  /** Callback when page is changed */
+  onSetPage: (
+    event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
+    page: number
+  ) => void;
+  /** Callback when per page is changed */
+  onPerPageSelect: (
+    event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
+    perPage: number
+  ) => void;
+  /** Callback when name filter changes */
+  setNameFilter: (filter: string) => void;
+  /** Callback when application selections change */
+  setAppSelections: React.Dispatch<React.SetStateAction<string[]>>;
+  /** Callback when selected roles change */
+  setSelectedRoles: (roles: string[]) => void;
+  /** Callback to clear all filters */
+  clearFilters: () => void;
+  /** Callback for select all functionality */
+  onSelectAll?: (
+    event: React.FormEvent<HTMLInputElement> | null,
+    isSelected: boolean
+  ) => void;
+}
+
+/**
+ * Pure presentational component for MUA roles table.
+ * Displays roles in both read-only and editable modes with full table functionality.
+ */
+export function MUARolesTableView({
+  isReadOnly,
+  rows,
+  applications,
+  pagedRows,
+  filteredRows,
+  perPage,
+  page,
+  anySelected,
+  isChecked,
+  error,
+  hasFilters,
+  nameFilter,
+  appSelections,
+  activeSortIndex,
+  activeSortDirection,
+  selectedRoles,
+  onSelect,
+  getIsRowSelected,
+  onExpand,
+  isRoleExpanded,
+  onSort,
+  onSetPage,
+  onPerPageSelect,
+  setNameFilter,
+  setAppSelections,
+  setSelectedRoles,
+  clearFilters,
+}: MUARolesTableViewProps): React.ReactElement {
   const columns = ['Role name', 'Role description', 'Permissions'];
   const expandedColumns = ['Application', 'Resource type', 'Operation'];
-
-  // Normalize selectedRoles to string array
-  const normalizedSelectedRoles = React.useMemo(() => {
-    return selectedRoles.map((role) =>
-      typeof role === 'string' ? role : role.display_name
-    );
-  }, [selectedRoles]);
-
-  // Data management
-  const { rows, setRows, applications, error, fetchRolePermissions } =
-    useMUATableData();
-
-  // Filtering
-  const {
-    nameFilter,
-    setNameFilter,
-    appSelections,
-    setAppSelections,
-    filteredRows,
-    hasFilters,
-    clearFilters,
-  } = useMUATableFiltering({
-    rows,
-    selectedRoles: normalizedSelectedRoles,
-    isReadOnly,
-  });
-
-  // Sorting
-  const { activeSortIndex, activeSortDirection, sortedRows, onSort } =
-    useMUATableSorting({
-      rows: filteredRows,
-    });
-
-  // Pagination
-  const { page, perPage, pagedRows, onSetPage, onPerPageSelect } =
-    useMUATablePagination({
-      rows: sortedRows,
-    });
-
-  // Selection (only used in editable mode)
-  const selectionProps = useMUATableSelection({
-    selectedRoles: normalizedSelectedRoles,
-    setSelectedRoles: setSelectedRoles || (() => {}),
-    filteredRows,
-  });
-
-  // Row expansion
-  const { onExpand, isRoleExpanded } = useMUATableExpansion({
-    rows,
-    setRows,
-    fetchRolePermissions,
-  });
 
   // Clear filters button
   const clearFiltersButton = (
@@ -129,16 +196,16 @@ const MUARolesTable: React.FC<MUARolesTableProps> = ({
   // Role toolbar (only shown in editable mode)
   const roleToolbar = isReadOnly ? null : (
     <RoleToolbar
-      selectedRoles={normalizedSelectedRoles}
-      setSelectedRoles={setSelectedRoles || (() => {})}
-      isChecked={selectionProps.isChecked || false}
+      selectedRoles={selectedRoles}
+      setSelectedRoles={setSelectedRoles}
+      isChecked={isChecked}
       appSelections={appSelections}
       setAppSelections={setAppSelections}
       columns={columns}
       rows={rows}
       filteredRows={filteredRows}
       pagedRows={pagedRows}
-      anySelected={selectionProps.anySelected}
+      anySelected={anySelected}
       clearFiltersButton={clearFiltersButton}
       perPage={perPage}
       nameFilter={nameFilter}
@@ -240,12 +307,12 @@ const MUARolesTable: React.FC<MUARolesTableProps> = ({
       {pagedRows.map((row, rowIndex) => (
         <Tbody key={row.uuid}>
           <Tr>
-            {!isReadOnly && (
+            {!isReadOnly && onSelect && getIsRowSelected && (
               <Td
                 select={{
                   rowIndex,
-                  onSelect: selectionProps.onSelect,
-                  isSelected: selectionProps.getIsRowSelected(row.display_name),
+                  onSelect,
+                  isSelected: getIsRowSelected(row.display_name),
                 }}
               />
             )}
@@ -344,6 +411,108 @@ const MUARolesTable: React.FC<MUARolesTableProps> = ({
       {roleTable}
       {isReadOnly && <AccessRequestsPagination id="bottom" />}
     </React.Fragment>
+  );
+}
+
+const MUARolesTable: React.FC<MUARolesTableProps> = ({
+  roles: selectedRoles,
+  setRoles: setSelectedRoles,
+}) => {
+  const isReadOnly = setSelectedRoles === undefined;
+
+  // Normalize selectedRoles to string array
+  const normalizedSelectedRoles = React.useMemo(() => {
+    return selectedRoles.map((role) =>
+      typeof role === 'string' ? role : role.display_name
+    );
+  }, [selectedRoles]);
+
+  // Data management
+  const { rows, setRows, applications, error, fetchRolePermissions } =
+    useMUATableData();
+
+  // Filtering
+  const {
+    nameFilter,
+    setNameFilter,
+    appSelections,
+    setAppSelections,
+    filteredRows,
+    hasFilters,
+    clearFilters,
+  } = useMUATableFiltering({
+    rows,
+    selectedRoles: normalizedSelectedRoles,
+    isReadOnly,
+  });
+
+  // Sorting
+  const { activeSortIndex, activeSortDirection, sortedRows, onSort } =
+    useMUATableSorting({
+      rows: filteredRows,
+    });
+
+  // Pagination
+  const { page, perPage, pagedRows, onSetPage, onPerPageSelect } =
+    useMUATablePagination({
+      rows: sortedRows,
+    });
+
+  // Selection (only used in editable mode)
+  const selectionProps = useMUATableSelection({
+    selectedRoles: normalizedSelectedRoles,
+    setSelectedRoles: setSelectedRoles || (() => {}),
+    filteredRows,
+  });
+
+  // Row expansion
+  const { onExpand, isRoleExpanded } = useMUATableExpansion({
+    rows,
+    setRows,
+    fetchRolePermissions,
+  });
+
+  // Role toolbar functionality
+  const { onSelectAll } = useRoleToolbar({
+    setSelectedRoles: setSelectedRoles || (() => {}),
+    filteredRows,
+    columns: ['Role name', 'Role description', 'Permissions'],
+    appSelections,
+    setAppSelections,
+    nameFilter,
+  });
+
+  return (
+    <MUARolesTableView
+      isReadOnly={isReadOnly}
+      rows={rows}
+      applications={applications}
+      pagedRows={pagedRows}
+      filteredRows={filteredRows}
+      perPage={perPage}
+      page={page}
+      anySelected={selectionProps.anySelected}
+      isChecked={selectionProps.isChecked || false}
+      error={error}
+      hasFilters={hasFilters}
+      nameFilter={nameFilter}
+      appSelections={appSelections}
+      activeSortIndex={activeSortIndex}
+      activeSortDirection={activeSortDirection}
+      selectedRoles={normalizedSelectedRoles}
+      onSelect={selectionProps.onSelect}
+      getIsRowSelected={selectionProps.getIsRowSelected}
+      onExpand={onExpand}
+      isRoleExpanded={isRoleExpanded}
+      onSort={onSort}
+      onSetPage={onSetPage}
+      onPerPageSelect={onPerPageSelect}
+      setNameFilter={setNameFilter}
+      setAppSelections={setAppSelections}
+      setSelectedRoles={setSelectedRoles || (() => {})}
+      clearFilters={clearFilters}
+      onSelectAll={onSelectAll}
+    />
   );
 };
 

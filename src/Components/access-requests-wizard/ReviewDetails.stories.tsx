@@ -2,10 +2,23 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { ReviewDetailsDisplay } from './ReviewDetails';
 
 const meta: Meta<typeof ReviewDetailsDisplay> = {
-  title: 'Components/Access Requests/ReviewDetailsDisplay',
   component: ReviewDetailsDisplay,
   parameters: {
     layout: 'padded',
+    docs: {
+      description: {
+        component: `
+ReviewDetailsDisplay is the presentational component for displaying access request review information. It shows account details, access duration, and selected roles in a structured layout.
+
+**Key Features:**
+- Clean grid-based layout with responsive design
+- Account name and number display
+- Access duration with from/to dates
+- Role list with proper spacing
+- Custom SCSS styling for bold text emphasis
+        `,
+      },
+    },
   },
   tags: ['autodocs'],
 };

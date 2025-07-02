@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {
-  authInterceptor,
+  // authInterceptor,
   responseDataInterceptor,
   interceptor401,
   interceptor500,
@@ -19,7 +19,7 @@ const interceptor403 = (error) => {
 };
 
 const apiInstance = axios.create();
-apiInstance.interceptors.request.use(authInterceptor);
+// apiInstance.interceptors.request.use(authInterceptor);
 apiInstance.interceptors.response.use(responseDataInterceptor);
 
 apiInstance.interceptors.response.use(null, interceptor401);

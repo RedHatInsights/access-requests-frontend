@@ -28,6 +28,54 @@ const meta: Meta<typeof ComponentName> = {
 };
 ```
 
+## **🔧 Component Decoupling Patterns**
+
+### **Hook-Coupled Components (CRITICAL PATTERN)**
+When a component is tightly coupled with hooks and can't be tested in Storybook:
+
+❌ **Wrong Approach:** Create fake components in stories
+```typescript
+// DON'T DO THIS - Creates a new component in stories
+const FakeComponent = ({ prop1, prop2 }) => <div>Fake implementation</div>
+```
+
+✅ **Correct Approach:** Extract presentational component + keep wrapper
+```typescript
+// 1. Extract presentational logic with explicit props
+export const ComponentView: React.FC<{
+  data: DataType;
+  isLoading: boolean;
+  onAction: () => void;
+}> = ({ data, isLoading, onAction }) => {
+  // Pure presentational logic here
+  return <div>Real component UI</div>;
+};
+
+// 2. Keep original as thin wrapper using hooks
+const OriginalComponent: React.FC<OriginalProps> = ({ id, onClose }) => {
+  const { data, isLoading, onAction } = useHook({ id, onClose });
+  return <ComponentView data={data} isLoading={isLoading} onAction={onAction} />;
+};
+
+// 3. Stories test the real presentational component
+const meta: Meta<typeof ComponentView> = {
+  component: ComponentView, // Test the actual component
+};
+```
+
+**Key Benefits:**
+- ✅ Stories test **real component code**, not fake implementations
+- ✅ Presentational logic is isolated and testable
+- ✅ Original component remains unchanged for existing usage
+- ✅ No hook mocking or complex workarounds needed
+
+### **Component Decoupling Checklist:**
+- [ ] Extracted presentational component with explicit props
+- [ ] Original component becomes thin wrapper using hooks
+- [ ] Stories test the extracted presentational component
+- [ ] All UI logic moved to presentational component
+- [ ] Hook logic remains in wrapper component
+
 ## **🔧 PatternFly Integration Patterns**
 
 ### **Table Row Wrappers**
