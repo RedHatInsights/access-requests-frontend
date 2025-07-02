@@ -18,65 +18,42 @@ import {
   DropdownItem,
   KebabToggle,
 } from '@patternfly/react-core/deprecated';
-import { Link, useParams } from 'react-router-dom';
-import { useDispatch, Provider } from 'react-redux';
-import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
+import { Link } from 'react-router-dom';
+import { Provider } from 'react-redux';
 import MUARolesTable from '../Components/mua-roles-table/MUARolesTable';
 import { RegistryContext } from '../store';
 import CancelRequestModal from '../Components/CancelRequestModal';
 import AccessRequestWizard from '../Components/access-requests-wizard/AccessRequestsWizard';
 import { getLabelProps } from '../Helpers/getLabelProps';
-import { getInternalActions, StatusLabel } from '../Helpers/getActions';
-import PropTypes from 'prop-types';
-import apiInstance from '../Helpers/apiInstance';
+import { getInternalActions } from '../Helpers/getActions';
+import { StatusLabel } from '../Helpers/getActions';
+import { useAccessRequestDetails } from './hooks/useAccessRequestDetails';
 
-const BaseAccessRequestDetailsPage = ({ isInternal }) => {
-  const [request, setRequest] = React.useState();
-  const { requestId } = useParams();
-  const dispatch = useDispatch();
-  React.useEffect(() => {
-    apiInstance
-      .get(
-        `${API_BASE}/cross-account-requests/${requestId}/${
-          isInternal ? '?query_by=user_id' : '?query_by=target_org'
-        }`,
-        { headers: { Accept: 'application/json' } }
-      )
-      .then((res) => {
-        if (res.errors) {
-          throw Error(res.errors.map((e) => e.detail).join('\n'));
-        }
-        setRequest(res);
-      })
-      .catch((err) => {
-        dispatch(
-          addNotification({
-            variant: 'danger',
-            title: 'Could not load access request',
-            description: err.message,
-          })
-        );
-      });
-  }, []);
+interface BaseAccessRequestDetailsPageProps {
+  isInternal: boolean;
+}
 
-  // Modal actions
-  const [openModal, setOpenModal] = React.useState({ type: null });
-  const onModalClose = () => setOpenModal({ type: null });
+const BaseAccessRequestDetailsPage: React.FC<
+  BaseAccessRequestDetailsPageProps
+> = ({ isInternal }) => {
+  const {
+    request,
+    requestId,
+    openModal,
+    setOpenModal,
+    onModalClose,
+    isDropdownOpen,
+    setIsDropdownOpen,
+    requestDisplayProps,
+  } = useAccessRequestDetails({ isInternal });
+
+  // Get actions for dropdown
   const actions = getInternalActions(
-    request && request.status,
+    request?.status || 'pending',
     requestId,
     setOpenModal
   );
-  const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
 
-  const requestDisplayProps = [
-    ...(isInternal
-      ? ['request_id', 'target_account', 'target_org']
-      : ['first_name', 'last_name']),
-    'start_date',
-    'end_date',
-    'created',
-  ];
   return (
     <React.Fragment>
       <PageSection variant="light">
@@ -95,7 +72,7 @@ const BaseAccessRequestDetailsPage = ({ isInternal }) => {
             </Title>
           </FlexItem>
           {isInternal && actions.items.length > 0 && (
-            <FlexItem alignSelf={{ default: 'alignRight' }}>
+            <FlexItem alignSelf={{ default: 'alignSelfFlexEnd' }}>
               <Dropdown
                 position="right"
                 toggle={
@@ -115,7 +92,7 @@ const BaseAccessRequestDetailsPage = ({ isInternal }) => {
                     {title}
                   </DropdownItem>
                 ))}
-                isDisabled={actions.disable}
+                disabled={actions.disable}
               />
             </FlexItem>
           )}
@@ -222,24 +199,33 @@ const BaseAccessRequestDetailsPage = ({ isInternal }) => {
   );
 };
 
-// This component is a federated module used in https://github.com/RedHatInsights/insights-rbac-ui
-// Try not to break RBAC.
-const AccessRequestDetailsPage = (props) => {
+interface AccessRequestDetailsPageProps {
+  /**
+   * Determines the view type for the access request details page.
+   * - `true`: Internal view for Red Hat employees (shows actions, status management)
+   * - `false`: External view for customers (read-only, shows decision status)
+   *
+   * Optional because this component serves dual purposes:
+   * 1. Standalone app (determines view from route context)
+   * 2. Federated module consumed by RBAC UI (explicit prop control)
+   */
+  isInternal?: boolean;
+}
+
+/**
+ * This component is a federated module used in https://github.com/RedHatInsights/insights-rbac-ui
+ * Try not to break RBAC.
+ */
+const AccessRequestDetailsPage: React.FC<AccessRequestDetailsPageProps> = ({
+  isInternal = false,
+}) => {
   const { getRegistry } = useContext(RegistryContext);
+
   return (
-    <Provider store={getRegistry().getStore()}>
-      <BaseAccessRequestDetailsPage isInternal={props?.isInternal} />
+    <Provider store={(getRegistry as any)().getStore()}>
+      <BaseAccessRequestDetailsPage isInternal={isInternal} />
     </Provider>
   );
-};
-
-AccessRequestDetailsPage.propTypes = {
-  getRegistry: PropTypes.func,
-  isInternal: PropTypes.bool,
-};
-
-BaseAccessRequestDetailsPage.propTypes = {
-  isInternal: PropTypes.bool,
 };
 
 export default AccessRequestDetailsPage;

@@ -7,22 +7,25 @@ import {
   Text,
   TextVariants,
 } from '@patternfly/react-core';
-import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
-import PropTypes from 'prop-types';
-import {
-  ACCESS_FROM,
-  ACCESS_TO,
-  ACCOUNT_NUMBER,
-  FIRST_NAME,
-  LAST_NAME,
-  SELECTED_ROLES,
-} from './schema';
 import './review-details.scss';
+import { useReviewDetails } from './hooks/useReviewDetails';
 
-const ReviewDetails = () => {
-  const formOptions = useFormApi();
-  const values = formOptions.getState().values;
+interface ReviewData {
+  accountName: string;
+  accountNumber: string;
+  accessFrom: string;
+  accessTo: string;
+  selectedRoles: string[];
+}
 
+interface ReviewDetailsDisplayProps {
+  data: ReviewData;
+}
+
+// Pure presentation component - perfect for Storybook
+export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
+  data,
+}) => {
   return (
     <React.Fragment>
       <Stack className="accessRequests">
@@ -37,9 +40,7 @@ const ReviewDetails = () => {
               </Text>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>
-                {values[FIRST_NAME] + ' ' + values[LAST_NAME]}
-              </Text>
+              <Text component={TextVariants.p}>{data.accountName}</Text>
             </GridItem>
           </Grid>
         </StackItem>
@@ -54,7 +55,7 @@ const ReviewDetails = () => {
               </Text>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{values[ACCOUNT_NUMBER]}</Text>
+              <Text component={TextVariants.p}>{data.accountNumber}</Text>
             </GridItem>
           </Grid>
         </StackItem>
@@ -76,7 +77,7 @@ const ReviewDetails = () => {
               <Text component={TextVariants.h4}>From</Text>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{values[ACCESS_FROM]}</Text>
+              <Text component={TextVariants.p}>{data.accessFrom}</Text>
             </GridItem>
           </Grid>
         </StackItem>
@@ -86,7 +87,7 @@ const ReviewDetails = () => {
               <Text component={TextVariants.h4}>To</Text>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{values[ACCESS_TO]}</Text>
+              <Text component={TextVariants.p}>{data.accessTo}</Text>
             </GridItem>
           </Grid>
         </StackItem>
@@ -101,13 +102,11 @@ const ReviewDetails = () => {
               </Text>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>
-                {values[SELECTED_ROLES]?.[0]}
-              </Text>
+              <Text component={TextVariants.p}>{data.selectedRoles?.[0]}</Text>
             </GridItem>
           </Grid>
         </StackItem>
-        {values[SELECTED_ROLES]?.slice(1).map((role) => (
+        {data.selectedRoles?.slice(1).map((role: string) => (
           <StackItem key={role}>
             <Grid>
               <GridItem sm={12} md={2}>
@@ -124,14 +123,21 @@ const ReviewDetails = () => {
   );
 };
 
-ReviewDetails.propTypes = {
-  targetAccount: PropTypes.any,
-  start: PropTypes.any,
-  end: PropTypes.any,
-  roles: PropTypes.any,
-  isLoading: PropTypes.any,
-  error: PropTypes.any,
-  onClose: PropTypes.any,
+interface ReviewDetailsProps {
+  targetAccount?: any;
+  start?: any;
+  end?: any;
+  roles?: any;
+  isLoading?: any;
+  error?: any;
+  onClose?: any;
+}
+
+// Connected component for use in forms
+const ReviewDetails: React.FC<ReviewDetailsProps> = () => {
+  const { data } = useReviewDetails();
+
+  return <ReviewDetailsDisplay data={data} />;
 };
 
 export default ReviewDetails;

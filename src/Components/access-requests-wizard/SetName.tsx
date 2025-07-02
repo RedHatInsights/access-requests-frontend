@@ -1,10 +1,15 @@
 import React from 'react';
 import { FormGroup, Split, SplitItem, TextInput } from '@patternfly/react-core';
-import useFormApi from '@data-driven-forms/react-form-renderer/use-form-api';
 import InputHelpPopover from '../common/InputHelpPopover';
+import { useFormField } from './hooks/useFormField';
 
-const SetName = () => {
-  const { getState } = useFormApi();
+interface SetNameProps {
+  name: string; // Required by useFieldApi
+}
+
+const SetName: React.FC<SetNameProps> = (props) => {
+  const { formValues } = useFormField(props);
+
   const popoverBody = (
     <p>
       Customers will be able to see this information as part of your request
@@ -23,7 +28,7 @@ const SetName = () => {
         >
           <TextInput
             id="first-name"
-            value={getState().values['first-name']}
+            value={formValues['first-name'] || ''}
             isDisabled
           />
         </FormGroup>
@@ -38,7 +43,7 @@ const SetName = () => {
         >
           <TextInput
             id="last-name"
-            value={getState().values['last-name']}
+            value={formValues['last-name'] || ''}
             isDisabled
           />
         </FormGroup>

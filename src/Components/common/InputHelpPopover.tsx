@@ -1,9 +1,14 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import HelpIcon from '@patternfly/react-icons/dist/esm/icons/help-icon';
 import { Popover } from '@patternfly/react-core';
 
-const InputHelpPopover = ({
+interface InputHelpPopoverProps {
+  headerContent?: React.ReactElement;
+  bodyContent?: React.ReactElement;
+  field?: string;
+}
+
+const InputHelpPopover: React.FC<InputHelpPopoverProps> = ({
   headerContent = null,
   bodyContent = null,
   field = 'input',
@@ -16,15 +21,9 @@ const InputHelpPopover = ({
       aria-describedby="form-name"
       className="pf-v5-c-form__group-label-help"
     >
-      <HelpIcon noVerticalAlign />
+      <HelpIcon />
     </button>
   </Popover>
 );
-
-InputHelpPopover.propTypes = {
-  headerContent: PropTypes.element,
-  bodyContent: PropTypes.element,
-  field: PropTypes.string,
-};
 
 export default InputHelpPopover;

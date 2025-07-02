@@ -8,9 +8,16 @@ import {
 } from '@patternfly/react-core';
 import { Tbody, Tr, Td } from '@patternfly/react-table';
 import SearchIcon from '@patternfly/react-icons/dist/js/icons/search-icon';
-import PropTypes from 'prop-types';
 
-const MUANoResults = ({ columns, clearFiltersButton }) => {
+interface MUANoResultsProps {
+  columns: Array<any>; // Table column configuration
+  clearFiltersButton: React.ReactElement;
+}
+
+const MUANoResults: React.FC<MUANoResultsProps> = ({
+  columns,
+  clearFiltersButton,
+}) => {
   return (
     <Tbody>
       <Tr>
@@ -31,11 +38,6 @@ const MUANoResults = ({ columns, clearFiltersButton }) => {
       </Tr>
     </Tbody>
   );
-};
-
-MUANoResults.propTypes = {
-  columns: PropTypes.array,
-  clearFiltersButton: PropTypes.object,
 };
 
 export default MUANoResults;

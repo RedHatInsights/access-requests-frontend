@@ -12,7 +12,11 @@ export const ACCESS_FROM = 'start';
 export const ACCESS_TO = 'end';
 export const SELECTED_ROLES = 'selected-roles';
 
-export default (isEdit, variant) => ({
+interface FormSchema {
+  fields: Array<any>; // Data-driven-forms has complex nested schema types
+}
+
+export default (isEdit: boolean, variant: string): FormSchema => ({
   fields: [
     {
       component: 'wizard',
@@ -44,17 +48,14 @@ export default (isEdit, variant) => ({
               isDisabled: isEdit,
               placeholder: 'Example, 8675309',
               FormGroupProps: {
-                labelIcon: (
-                  <InputHelpPopover
-                    bodyContent={
-                      <p>
-                        This is the account number that you would like to
-                        receive read access to
-                      </p>
-                    }
-                    field="account number"
-                  />
-                ),
+                labelIcon: React.createElement(InputHelpPopover, {
+                  bodyContent: React.createElement(
+                    'p',
+                    null,
+                    'This is the account number that you would like to receive read access to'
+                  ),
+                  field: 'account number',
+                }),
               },
               helperText: 'Enter the account number you would like access to',
               name: ACCOUNT_NUMBER,
@@ -67,17 +68,14 @@ export default (isEdit, variant) => ({
               placeholder: 'Example, 1234567',
               isDisabled: isEdit,
               FormGroupProps: {
-                labelIcon: (
-                  <InputHelpPopover
-                    bodyContent={
-                      <p>
-                        This is the org ID of the account that you would like to
-                        receive read access to
-                      </p>
-                    }
-                    field="organization ID"
-                  />
-                ),
+                labelIcon: React.createElement(InputHelpPopover, {
+                  bodyContent: React.createElement(
+                    'p',
+                    null,
+                    'This is the org ID of the account that you would like to receive read access to'
+                  ),
+                  field: 'organization ID',
+                }),
               },
               helperText: 'Enter the organization ID you would like access to',
               name: ORG_ID,
@@ -95,7 +93,7 @@ export default (isEdit, variant) => ({
               hideField: true,
               isRequired: true,
               validate: [
-                (value) =>
+                (value: string) =>
                   value?.length > 0 ? undefined : 'Invalid start date',
               ],
             },
@@ -105,7 +103,8 @@ export default (isEdit, variant) => ({
               hideField: true,
               isRequired: true,
               validate: [
-                (value) => (value?.length > 0 ? undefined : 'Invalid end date'),
+                (value: string) =>
+                  value?.length > 0 ? undefined : 'Invalid end date',
               ],
             },
           ],
@@ -114,13 +113,13 @@ export default (isEdit, variant) => ({
           name: 'select-roles',
           nextStep: 'review-details',
           title: 'Select roles',
-          StepTemplate: (props) => props.formFields,
+          StepTemplate: (props: any) => props.formFields,
           fields: [
             {
               component: 'select-roles',
               name: SELECTED_ROLES,
               validate: [
-                (value) =>
+                (value: string[]) =>
                   value?.length > 0 ? undefined : 'No roles selected',
               ],
             },

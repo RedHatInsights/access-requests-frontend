@@ -6,7 +6,7 @@ import Routing from './Routing';
 
 import './index.css';
 
-const App = () => {
+const App: React.FC = () => {
   const userData = useUserData();
 
   if (!userData.ready) {
