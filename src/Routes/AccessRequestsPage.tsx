@@ -24,8 +24,8 @@ const AccessRequestsPage: React.FC<AccessRequestsPageProps> = ({
   return (
     <Provider store={registry.getStore()}>
       <ErroReducerCatcher>
-        <PageSection variant="light">
-          <Title headingLevel="h1" className="pf-v5-u-pb-sm">
+        <PageSection hasBodyWrapper={false}>
+          <Title headingLevel="h1" className="pf-v6-u-pb-sm">
             Access Requests
           </Title>
           <p>
@@ -33,7 +33,7 @@ const AccessRequestsPage: React.FC<AccessRequestsPageProps> = ({
             access.
           </p>
         </PageSection>
-        <PageSection padding={{ default: 'noPadding' }}>
+        <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
           <AccessRequestsTable isInternal={isInternal} />
         </PageSection>
       </ErroReducerCatcher>

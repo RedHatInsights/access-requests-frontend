@@ -1,6 +1,5 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
+import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import apiInstance from '../apiInstance';
 import { AccessRequestStatus } from '../getLabelProps';
 
@@ -28,7 +27,7 @@ export const useStatusUpdate = ({
     React.useState<AccessRequestStatus>(initialStatus);
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const dispatch = useDispatch();
+  const addNotification = useAddNotification();
 
   const updateStatus = React.useCallback(
     (newStatus: AccessRequestStatus) => {
@@ -53,31 +52,27 @@ export const useStatusUpdate = ({
             );
           }
 
-          dispatch(
-            addNotification({
-              variant: 'success',
-              title: `Request ${newStatus} successfully`,
-            })
-          );
+          addNotification({
+            variant: 'success',
+            title: `Request ${newStatus} successfully`,
+          });
 
           setStatus(newStatus);
           setIsEditing(false);
           setIsLoading(false);
         })
         .catch((err: Error) => {
-          dispatch(
-            addNotification({
-              variant: 'danger',
-              title: `There was an error ${
-                newStatus === 'approved' ? 'approving' : 'denying'
-              } your request`,
-              description: err.message,
-            })
-          );
+          addNotification({
+            variant: 'danger',
+            title: `There was an error ${
+              newStatus === 'approved' ? 'approving' : 'denying'
+            } your request`,
+            description: err.message,
+          });
           setIsLoading(false);
         });
     },
-    [requestId, dispatch]
+    [requestId, addNotification]
   );
 
   return {

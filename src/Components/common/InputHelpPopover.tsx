@@ -19,7 +19,7 @@ const InputHelpPopover: React.FC<InputHelpPopoverProps> = ({
       aria-label={`More info for ${field}`}
       onClick={(e) => e.preventDefault()}
       aria-describedby="form-name"
-      className="pf-v5-c-form__group-label-help"
+      className="pf-v6-c-form__group-label-help"
     >
       <HelpIcon />
     </button>

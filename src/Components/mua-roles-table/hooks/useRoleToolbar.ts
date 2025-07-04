@@ -30,11 +30,8 @@ interface UseRoleToolbarReturn {
   setActions: (name: keyof ToolbarState, value: any) => void;
   hasFilters: boolean;
   onSelectAll: (ev: any, isSelected: boolean) => void;
-  handleFilterColumnSelect: (ev?: React.SyntheticEvent<HTMLDivElement>) => void;
-  handleAppSelection: (
-    ev: React.MouseEvent | React.ChangeEvent,
-    selection: string | any
-  ) => void;
+  handleFilterColumnSelect: (value: string) => void;
+  handleAppSelection: (value: string) => void;
   handleToggleDropdown: (isOpen: boolean) => void;
   handleToggleSelect: (isOpen: boolean) => void;
   handleToggleBulkSelect: (isOpen: boolean) => void;
@@ -101,23 +98,20 @@ export const useRoleToolbar = ({
   );
 
   const handleFilterColumnSelect = React.useCallback(
-    (ev?: React.SyntheticEvent<HTMLDivElement>) => {
-      const target = ev?.target as HTMLElement;
+    (value: string) => {
       setActions('isDropdownOpen', false);
       setActions('isSelectOpen', false);
-      setActions('filterColumn', target?.textContent || 'Role name');
+      setActions('filterColumn', value);
     },
     [setActions]
   );
 
   const handleAppSelection = React.useCallback(
-    (_ev: React.MouseEvent | React.ChangeEvent, selection: string | any) => {
-      const selectionStr =
-        typeof selection === 'string' ? selection : selection.toString();
-      if (appSelections.includes(selectionStr)) {
-        setAppSelections((prev) => prev.filter((s) => s !== selectionStr));
+    (value: string) => {
+      if (appSelections.includes(value)) {
+        setAppSelections((prev) => prev.filter((s) => s !== value));
       } else {
-        setAppSelections([...appSelections, selectionStr]);
+        setAppSelections([...appSelections, value]);
       }
     },
     [appSelections, setAppSelections]

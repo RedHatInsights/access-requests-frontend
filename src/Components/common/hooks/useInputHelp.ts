@@ -43,7 +43,7 @@ export const useInputHelp = ({
       'aria-label': ariaLabel,
       onClick: handleClick,
       'aria-describedby': 'form-name',
-      className: 'pf-v5-c-form__group-label-help',
+      className: 'pf-v6-c-form__group-label-help',
     },
   };
 };

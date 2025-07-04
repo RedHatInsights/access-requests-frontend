@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { http, HttpResponse } from 'msw';
-import { AccessRequestDetailsPageView } from './AccessRequestDetailsPage';
+
+import { AccessRequestDetailsPageView } from '../Components/AccessRequestDetailsPageView';
 
 const meta: Meta<typeof AccessRequestDetailsPageView> = {
   component: AccessRequestDetailsPageView,

@@ -4,8 +4,8 @@ import {
   GridItem,
   Stack,
   StackItem,
-  Text,
-  TextVariants,
+  Content,
+  ContentVariants,
 } from '@patternfly/react-core';
 import './review-details.scss';
 import { useReviewDetails } from './hooks/useReviewDetails';
@@ -29,80 +29,86 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
   return (
     <React.Fragment>
       <Stack className="accessRequests">
-        <StackItem className="pf-v5-u-mb-md">
+        <StackItem className="pf-v6-u-mb-md">
           <Grid>
             <GridItem sm={12} md={2}>
-              <Text
-                component={TextVariants.h4}
+              <Content
+                component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
                 Account name
-              </Text>
+              </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{data.accountName}</Text>
+              <Content component={ContentVariants.p}>
+                {data.accountName}
+              </Content>
             </GridItem>
           </Grid>
         </StackItem>
-        <StackItem className="pf-v5-u-mb-md">
+        <StackItem className="pf-v6-u-mb-md">
           <Grid>
             <GridItem sm={12} md={2}>
-              <Text
-                component={TextVariants.h4}
+              <Content
+                component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
                 Account number
-              </Text>
+              </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{data.accountNumber}</Text>
+              <Content component={ContentVariants.p}>
+                {data.accountNumber}
+              </Content>
             </GridItem>
           </Grid>
         </StackItem>
         <StackItem>
           <Grid>
             <GridItem sm={12} md={2}>
-              <Text
-                component={TextVariants.h4}
+              <Content
+                component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
                 Access duration
-              </Text>
+              </Content>
             </GridItem>
           </Grid>
         </StackItem>
         <StackItem>
           <Grid>
             <GridItem sm={12} md={2}>
-              <Text component={TextVariants.h4}>From</Text>
+              <Content component={ContentVariants.h4}>From</Content>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{data.accessFrom}</Text>
+              <Content component={ContentVariants.p}>{data.accessFrom}</Content>
             </GridItem>
           </Grid>
         </StackItem>
-        <StackItem className="pf-v5-u-mb-md">
+        <StackItem className="pf-v6-u-mb-md">
           <Grid>
             <GridItem sm={12} md={2}>
-              <Text component={TextVariants.h4}>To</Text>
+              <Content component={ContentVariants.h4}>To</Content>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{data.accessTo}</Text>
+              <Content component={ContentVariants.p}>{data.accessTo}</Content>
             </GridItem>
           </Grid>
         </StackItem>
         <StackItem>
           <Grid>
             <GridItem sm={12} md={2}>
-              <Text
-                component={TextVariants.h4}
+              <Content
+                component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
                 Roles
-              </Text>
+              </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Text component={TextVariants.p}>{data.selectedRoles?.[0]}</Text>
+              <Content component={ContentVariants.p}>
+                {data.selectedRoles?.[0]}
+              </Content>
             </GridItem>
           </Grid>
         </StackItem>
@@ -110,10 +116,10 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
           <StackItem key={role}>
             <Grid>
               <GridItem sm={12} md={2}>
-                <Text component={TextVariants.h4}></Text>
+                <Content component={ContentVariants.h4}></Content>
               </GridItem>
               <GridItem sm={12} md={10}>
-                <Text component={TextVariants.p}>{role}</Text>
+                <Content component={ContentVariants.p}>{role}</Content>
               </GridItem>
             </Grid>
           </StackItem>

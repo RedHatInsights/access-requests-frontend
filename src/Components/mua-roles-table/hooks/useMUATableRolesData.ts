@@ -1,6 +1,5 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
+import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import apiInstance from '../../../Helpers/apiInstance';
 
 // Global variable declaration
@@ -48,7 +47,7 @@ export const useMUATableRolesData = (): UseMUATableDataReturn => {
     React.useState<string[]>(applicationsCache);
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
-  const dispatch = useDispatch();
+  const addNotification = useAddNotification();
 
   // Initial data fetch
   React.useEffect(() => {
@@ -95,16 +94,14 @@ export const useMUATableRolesData = (): UseMUATableDataReturn => {
           setError(errorMessage);
           setIsLoading(false);
 
-          dispatch(
-            addNotification({
-              variant: 'danger',
-              title: 'Could not fetch roles list',
-              description: errorMessage,
-            })
-          );
+          addNotification({
+            variant: 'danger',
+            title: 'Could not fetch roles list',
+            description: errorMessage,
+          });
         });
     }
-  }, [dispatch]);
+  }, [addNotification]);
 
   // Function to fetch permissions for a specific role
   const fetchRolePermissions = React.useCallback(
@@ -141,19 +138,17 @@ export const useMUATableRolesData = (): UseMUATableDataReturn => {
         }
       } catch (err) {
         const error = err as Error;
-        dispatch(
-          addNotification({
-            variant: 'danger',
-            title: `Could not fetch permission list for ${
-              role.name || role.display_name
-            }.`,
-            description: error.message,
-          })
-        );
+        addNotification({
+          variant: 'danger',
+          title: `Could not fetch permission list for ${
+            role.name || role.display_name
+          }.`,
+          description: error.message,
+        });
         throw error;
       }
     },
-    [dispatch]
+    [addNotification]
   );
 
   return {

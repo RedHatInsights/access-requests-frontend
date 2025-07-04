@@ -1,15 +1,13 @@
 import React from 'react';
 import {
+  Label,
+  LabelGroup,
   Bullseye,
   Button,
   capitalize,
-  Chip,
-  ChipGroup,
   EmptyState,
   EmptyStateBody,
   EmptyStateFooter,
-  EmptyStateHeader,
-  EmptyStateIcon,
   InputGroup,
   InputGroupItem,
   Pagination,
@@ -17,16 +15,15 @@ import {
   Toolbar,
   ToolbarContent,
   ToolbarItem,
-} from '@patternfly/react-core';
-import {
   Dropdown,
+  DropdownList,
   DropdownItem,
-  DropdownToggle,
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
-} from '@patternfly/react-core/deprecated';
-import { Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Table } from '@patternfly/react-table/deprecated';
+} from '@patternfly/react-core';
+import { Tbody, Td, Th, Thead, Tr, Table } from '@patternfly/react-table';
 import CancelRequestModal from './CancelRequestModal';
 import AccessRequestsWizard from './access-requests-wizard/AccessRequestsWizard';
 import SearchIcon from '@patternfly/react-icons/dist/js/icons/search-icon';
@@ -193,15 +190,15 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
   // Early return for empty state when no data and no filters
   if (rows.length === 0 && !isLoading && !filtering.filtersDirty) {
     return (
-      <Bullseye style={{ height: 'auto' }} className="pf-v5-u-mt-lg">
-        <EmptyState variant="lg">
-          <EmptyStateHeader
-            titleText={
-              isInternal ? 'No access requests' : 'You have no access requests'
-            }
-            icon={<EmptyStateIcon icon={PlusCircleIcon} />}
-            headingLevel="h3"
-          />
+      <Bullseye style={{ height: 'auto' }} className="pf-v6-u-mt-lg">
+        <EmptyState
+          headingLevel="h3"
+          icon={PlusCircleIcon}
+          titleText={
+            isInternal ? 'No access requests' : 'You have no access requests'
+          }
+          variant="lg"
+        >
           <EmptyStateBody>
             {isInternal
               ? 'Click the button below to create an access request.'
@@ -257,35 +254,44 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
             <InputGroupItem>
               <Dropdown
                 isOpen={filtering.isDropdownOpen}
-                onSelect={(event) => {
-                  const target = event?.target as HTMLElement;
-                  filtering.setIsDropdownOpen(false);
-                  filtering.setFilterColumn(target?.textContent || columns[0]);
-                  filtering.setIsSelectOpen(false);
-                  filtering.setFiltersDirty(true);
+                onSelect={(
+                  event?: React.MouseEvent<Element, MouseEvent>,
+                  value?: string | number
+                ) => {
+                  if (value) {
+                    filtering.setIsDropdownOpen(false);
+                    filtering.setFilterColumn(value.toString());
+                    filtering.setIsSelectOpen(false);
+                    filtering.setFiltersDirty(true);
+                  }
                 }}
-                toggle={
-                  <DropdownToggle
-                    onToggle={(_event, isOpen) =>
-                      filtering.setIsDropdownOpen(isOpen)
-                    }
-                  >
-                    <FilterIcon /> {filtering.filterColumn}
-                  </DropdownToggle>
+                onOpenChange={(isOpen: boolean) =>
+                  filtering.setIsDropdownOpen(isOpen)
                 }
-                dropdownItems={filtering
-                  .getFilterableColumns()
-                  .map((i) => columns[i])
-                  .map((colName) => (
-                    <DropdownItem
-                      key={colName}
-                      value={colName}
-                      component="button"
-                    >
-                      {capitalize(colName)}
-                    </DropdownItem>
-                  ))}
-              />
+                toggle={(toggleRef: React.Ref<any>) => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    onClick={() =>
+                      filtering.setIsDropdownOpen(!filtering.isDropdownOpen)
+                    }
+                    isExpanded={filtering.isDropdownOpen}
+                    icon={<FilterIcon />}
+                  >
+                    {filtering.filterColumn}
+                  </MenuToggle>
+                )}
+              >
+                <DropdownList>
+                  {filtering
+                    .getFilterableColumns()
+                    .map((i) => columns[i])
+                    .map((colName) => (
+                      <DropdownItem key={colName} value={colName}>
+                        {capitalize(colName)}
+                      </DropdownItem>
+                    ))}
+                </DropdownList>
+              </Dropdown>
             </InputGroupItem>
 
             {/* Status/Decision filter */}
@@ -296,38 +302,60 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
                 </span>
                 <Select
                   aria-labelledby={selectLabelId}
-                  variant="checkbox"
                   aria-label="Select statuses"
-                  onToggle={(_event, isOpen) =>
+                  isOpen={filtering.isSelectOpen}
+                  selected={filtering.statusSelections}
+                  onSelect={(
+                    event?: React.MouseEvent<Element, MouseEvent>,
+                    value?: string | number
+                  ) => {
+                    if (value) {
+                      filtering.setFiltersDirty(true);
+                      const selectionStr = value.toString();
+                      if (filtering.statusSelections.includes(selectionStr)) {
+                        filtering.setStatusSelections(
+                          filtering.statusSelections.filter(
+                            (s) => s !== selectionStr
+                          )
+                        );
+                      } else {
+                        filtering.setStatusSelections([
+                          ...filtering.statusSelections,
+                          selectionStr,
+                        ]);
+                      }
+                      setPage(1);
+                    }
+                  }}
+                  onOpenChange={(isOpen: boolean) =>
                     filtering.setIsSelectOpen(isOpen)
                   }
-                  onSelect={(_event, selection) => {
-                    filtering.setFiltersDirty(true);
-                    const selectionStr = String(selection);
-                    if (filtering.statusSelections.includes(selectionStr)) {
-                      filtering.setStatusSelections(
-                        filtering.statusSelections.filter(
-                          (s) => s !== selectionStr
-                        )
-                      );
-                    } else {
-                      filtering.setStatusSelections([
-                        ...filtering.statusSelections,
-                        selectionStr,
-                      ]);
-                    }
-                    setPage(1);
-                  }}
-                  isOpen={filtering.isSelectOpen}
-                  selections={filtering.statusSelections}
-                  isCheckboxSelectionBadgeHidden
-                  placeholderText={selectPlaceholder}
+                  toggle={(toggleRef: React.Ref<any>) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={() =>
+                        filtering.setIsSelectOpen(!filtering.isSelectOpen)
+                      }
+                      isExpanded={filtering.isSelectOpen}
+                    >
+                      {filtering.statusSelections.length > 0
+                        ? `${filtering.statusSelections.length} selected`
+                        : selectPlaceholder}
+                    </MenuToggle>
+                  )}
                 >
-                  {statuses.map((status) => (
-                    <SelectOption key={status} value={status}>
-                      {capitalize(status)}
-                    </SelectOption>
-                  ))}
+                  <SelectList>
+                    {statuses.map((status) => (
+                      <SelectOption
+                        key={status}
+                        value={status}
+                        hasCheckbox
+                        isSelected={filtering.statusSelections.includes(status)}
+                      >
+                        {capitalize(status)}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
                 </Select>
               </React.Fragment>
             )}
@@ -358,7 +386,7 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
           </InputGroup>
         </ToolbarItem>
         <ToolbarItem>{createButton}</ToolbarItem>
-        <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+        <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
           <AccessRequestsPaginationView
             itemCount={numRows}
             perPage={perPage}
@@ -376,11 +404,12 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
 
       {/* Filter chips */}
       <ToolbarContent>
-        <ChipGroup categoryName="Status">
+        <LabelGroup categoryName="Status">
           {filtering.statusSelections.map((status) => (
-            <Chip
+            <Label
+              variant="outline"
               key={status}
-              onClick={() => {
+              onClose={() => {
                 filtering.setStatusSelections(
                   filtering.statusSelections.filter((s) => s !== status)
                 );
@@ -388,20 +417,21 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
               }}
             >
               {status}
-            </Chip>
+            </Label>
           ))}
-        </ChipGroup>
+        </LabelGroup>
         {filtering.accountFilter && (
-          <ChipGroup categoryName="Account number">
-            <Chip
-              onClick={() => {
+          <LabelGroup categoryName="Account number">
+            <Label
+              variant="outline"
+              onClose={() => {
                 filtering.setAccountFilter('');
                 setPage(1);
               }}
             >
               {filtering.accountFilter}
-            </Chip>
-          </ChipGroup>
+            </Label>
+          </LabelGroup>
         )}
         {filtering.hasFilters && clearFiltersButton}
       </ToolbarContent>
@@ -504,12 +534,12 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
           <Tr>
             <Td colSpan={columns.length + (isInternal ? 1 : 0)}>
               <div>
-                <EmptyState variant="sm">
-                  <EmptyStateHeader
-                    titleText="No matching requests found"
-                    icon={<EmptyStateIcon icon={SearchIcon} />}
-                    headingLevel="h2"
-                  />
+                <EmptyState
+                  headingLevel="h2"
+                  icon={SearchIcon}
+                  titleText="No matching requests found"
+                  variant="sm"
+                >
                   <EmptyStateBody>
                     No results match the filter criteria. Remove all filters or
                     clear all filters to show results.

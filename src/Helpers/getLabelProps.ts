@@ -16,13 +16,11 @@ export type AccessRequestStatus =
 // Define PatternFly label colors - matching actual PatternFly types
 export type LabelColor =
   | 'blue'
-  | 'cyan'
   | 'green'
   | 'orange'
   | 'purple'
   | 'red'
-  | 'grey'
-  | 'gold';
+  | 'grey';
 
 export interface LabelProps {
   color?: LabelColor;

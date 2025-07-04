@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, Label } from '@patternfly/react-core';
 import { capitalize } from '@patternfly/react-core/dist/esm/helpers/util';
 import EditAltIcon from '@patternfly/react-icons/dist/js/icons/edit-alt-icon';
-import { getLabelProps, AccessRequestStatus } from './getLabelProps';
+import { AccessRequestStatus, getLabelProps } from './getLabelProps';
 import { useStatusUpdate } from './hooks/useStatusUpdate';
 
 interface InternalAction {
@@ -96,7 +96,7 @@ export function StatusLabelView({
       {isEditing || status === 'pending' ? (
         <React.Fragment>
           <Button
-            className="pf-v5-u-mr-md"
+            className="pf-v6-u-mr-md"
             isDisabled={isLoading || status === 'approved'}
             variant="primary"
             onClick={() => onUpdateStatus('approved')}
@@ -104,7 +104,7 @@ export function StatusLabelView({
             Approve
           </Button>
           <Button
-            className="pf-v5-u-mr-md"
+            className="pf-v6-u-mr-md"
             isDisabled={isLoading || status === 'denied'}
             variant="danger"
             onClick={() => onUpdateStatus('denied')}
@@ -117,12 +117,11 @@ export function StatusLabelView({
       )}
       {['approved', 'denied'].includes(status) && (
         <Button
+          icon={<EditAltIcon />}
           variant="plain"
           aria-label="Edit status"
           onClick={() => onSetEditing(!isEditing)}
-        >
-          <EditAltIcon />
-        </Button>
+        />
       )}
     </React.Fragment>
   );
