@@ -6,7 +6,7 @@ import {
   Switch as ToggleSwitch,
 } from '@patternfly/react-core';
 import { UserData } from './Hooks/useUserData';
-import InvalidObject from '@patternfly/react-component-groups/dist/dynamic/InvalidObject';
+import MissingPage from '@patternfly/react-component-groups/dist/dynamic/MissingPage';
 import pathnames from './pathnames';
 
 const AccessRequestsPage = lazy(() => import('./Routes/AccessRequestsPage'));
@@ -58,10 +58,9 @@ export const Routing = ({ userData }: { userData: UserData }) => {
     >
       {isDev && (
         <ToggleSwitch
-          className="pf-v5-u-p-sm"
+          className="pf-v6-u-p-sm"
           id="toggle-view"
-          label="Internal view"
-          labelOff="External view"
+          label={isInternal ? 'Internal view' : 'External view'}
           checked={isInternal}
           onChange={() => setIsInternal((prev) => !prev)}
         />
@@ -69,7 +68,7 @@ export const Routing = ({ userData }: { userData: UserData }) => {
       <Routes>
         {renderedRoutes}
         {/* Catch all unmatched routes */}
-        <Route path="*" element={<InvalidObject />} />
+        <Route path="*" element={<MissingPage />} />
       </Routes>
     </Suspense>
   );

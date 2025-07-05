@@ -8,6 +8,7 @@ import { type ChromeConfig, ChromeProvider, type FeatureFlagsConfig, FeatureFlag
 // Import MSW
 import { initialize, mswLoader } from 'msw-storybook-addon';
 import { MemoryRouter } from 'react-router-dom';
+import NotificationsProvider from '@redhat-cloud-services/frontend-components-notifications/NotificationsProvider';
 
 // Initialize MSW
 initialize();
@@ -61,8 +62,9 @@ const preview: Preview = {
             <FeatureFlagsProvider value={featureFlags}>
               <RegistryContext.Provider value={{ getRegistry: () => registry }}>
                 <Provider store={registry.getStore()}>
-
-                  <Story />
+                  <NotificationsProvider>
+                    <Story />
+                  </NotificationsProvider>
                 </Provider>
               </RegistryContext.Provider>
             </FeatureFlagsProvider>

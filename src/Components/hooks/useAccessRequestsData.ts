@@ -1,6 +1,5 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
+import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import apiInstance from '../../Helpers/apiInstance';
 import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
 import useUserData from '../../Hooks/useUserData';
@@ -17,6 +16,7 @@ interface AccessRequestData {
   end_date: string;
   created: string;
   status: string;
+
   [key: string]: any;
 }
 
@@ -61,7 +61,7 @@ export const useAccessRequestsData = ({
   const [numRows, setNumRows] = React.useState<number>(0);
   const [rows, setRows] = React.useState<string[][]>([]);
   const [error, setError] = React.useState<string | null>(null);
-  const dispatch = useDispatch();
+  const addNotification = useAddNotification();
 
   // Chrome and user data for permission checking
   const { isOrgAdmin } = useUserData();
@@ -142,18 +142,16 @@ export const useAccessRequestsData = ({
         setRows(transformedRows);
         setIsLoading(false);
       })
-      .catch((err: Error) => {
-        const errorMessage = err.message || 'Could not list access requests';
-        setError(errorMessage);
+      .catch((error: Error) => {
+        console.error('Failed to load requests:', error);
+        setError(error.message);
         setIsLoading(false);
 
-        dispatch(
-          addNotification({
-            variant: 'danger',
-            title: 'Could not list access requests',
-            description: errorMessage,
-          })
-        );
+        addNotification({
+          variant: 'danger',
+          title: 'Could not load access requests',
+          description: error.message,
+        });
       });
   }, [
     isInternal,
@@ -166,7 +164,7 @@ export const useAccessRequestsData = ({
     columns,
     isOrgAdmin,
     getBundleData,
-    dispatch,
+    addNotification,
   ]);
 
   return {

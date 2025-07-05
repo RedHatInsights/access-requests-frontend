@@ -518,13 +518,13 @@ export const PastDateValidation: Story = {
     expect(errorMessage).toBeInTheDocument();
 
     // Verify the helper text is in error state (red styling)
-    const helperTextItem = errorMessage?.closest('.pf-v5-c-helper-text__item');
+    const helperTextItem = errorMessage?.closest('.pf-v6-c-helper-text__item');
     expect(helperTextItem).toBeInTheDocument();
     expect(helperTextItem).toHaveClass('pf-m-error');
 
     // Verify error icon is present
     const errorIcon = helperTextItem?.querySelector(
-      '.pf-v5-c-helper-text__item-icon'
+      '.pf-v6-c-helper-text__item-icon'
     );
     expect(errorIcon).toBeInTheDocument();
   },
@@ -573,13 +573,13 @@ export const SixtyDayLimitValidation: Story = {
     expect(errorMessage).toBeInTheDocument();
 
     // Verify the helper text is in error state (red styling)
-    const helperTextItem = errorMessage?.closest('.pf-v5-c-helper-text__item');
+    const helperTextItem = errorMessage?.closest('.pf-v6-c-helper-text__item');
     expect(helperTextItem).toBeInTheDocument();
     expect(helperTextItem).toHaveClass('pf-m-error');
 
     // Verify error icon is present
     const errorIcon = helperTextItem?.querySelector(
-      '.pf-v5-c-helper-text__item-icon'
+      '.pf-v6-c-helper-text__item-icon'
     );
     expect(errorIcon).toBeInTheDocument();
   },
@@ -643,13 +643,13 @@ export const EndBeforeStartValidation: Story = {
     expect(errorMessage).toBeInTheDocument();
 
     // Verify the helper text is in error state (red styling)
-    const helperTextItem = errorMessage?.closest('.pf-v5-c-helper-text__item');
+    const helperTextItem = errorMessage?.closest('.pf-v6-c-helper-text__item');
     expect(helperTextItem).toBeInTheDocument();
     expect(helperTextItem).toHaveClass('pf-m-error');
 
     // Verify error icon is present
     const errorIcon = helperTextItem?.querySelector(
-      '.pf-v5-c-helper-text__item-icon'
+      '.pf-v6-c-helper-text__item-icon'
     );
     expect(errorIcon).toBeInTheDocument();
   },
@@ -713,13 +713,13 @@ export const OneYearLimitValidation: Story = {
     expect(errorMessage).toBeInTheDocument();
 
     // Verify the helper text is in error state (red styling)
-    const helperTextItem = errorMessage?.closest('.pf-v5-c-helper-text__item');
+    const helperTextItem = errorMessage?.closest('.pf-v6-c-helper-text__item');
     expect(helperTextItem).toBeInTheDocument();
     expect(helperTextItem).toHaveClass('pf-m-error');
 
     // Verify error icon is present
     const errorIcon = helperTextItem?.querySelector(
-      '.pf-v5-c-helper-text__item-icon'
+      '.pf-v6-c-helper-text__item-icon'
     );
     expect(errorIcon).toBeInTheDocument();
   },
@@ -763,7 +763,7 @@ export const InvalidFormatValidation: Story = {
 
     // Now the helper text should show error state (red styling)
     const helperTextItem = formatHelperText.closest(
-      '.pf-v5-c-helper-text__item'
+      '.pf-v6-c-helper-text__item'
     );
     expect(helperTextItem).toBeInTheDocument();
 
@@ -772,7 +772,7 @@ export const InvalidFormatValidation: Story = {
 
     // Verify error icon is present (PatternFly adds this for error variant)
     const errorIcon = helperTextItem?.querySelector(
-      '.pf-v5-c-helper-text__item-icon'
+      '.pf-v6-c-helper-text__item-icon'
     );
     expect(errorIcon).toBeInTheDocument();
   },

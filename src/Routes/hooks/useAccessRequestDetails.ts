@@ -1,7 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
+import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import apiInstance from '../../Helpers/apiInstance';
 import { AccessRequestStatus } from '../../Helpers/getLabelProps';
 
@@ -12,6 +11,7 @@ interface AccessRequestRole {
   id: string;
   display_name: string;
   resource_definitions: any[];
+
   [key: string]: any;
 }
 
@@ -26,6 +26,7 @@ interface AccessRequest {
   created: string;
   status: AccessRequestStatus;
   roles: AccessRequestRole[];
+
   [key: string]: any;
 }
 
@@ -54,7 +55,7 @@ export const useAccessRequestDetails = ({
 }: UseAccessRequestDetailsProps): UseAccessRequestDetailsReturn => {
   const [request, setRequest] = React.useState<AccessRequest>();
   const { requestId } = useParams<{ requestId: string }>();
-  const dispatch = useDispatch();
+  const addNotification = useAddNotification();
 
   React.useEffect(() => {
     if (!requestId) return;
@@ -76,15 +77,13 @@ export const useAccessRequestDetails = ({
         setRequest(res);
       })
       .catch((err: Error) => {
-        dispatch(
-          addNotification({
-            variant: 'danger',
-            title: 'Could not load access request',
-            description: err.message,
-          })
-        );
+        addNotification({
+          variant: 'danger',
+          title: 'Could not load access request',
+          description: err.message,
+        });
       });
-  }, [requestId, isInternal, dispatch]);
+  }, [requestId, isInternal, addNotification]);
 
   // Modal state
   const [openModal, setOpenModal] = React.useState<OpenModal>({ type: null });

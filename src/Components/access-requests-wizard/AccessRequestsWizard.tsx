@@ -5,13 +5,16 @@ import {
   capitalize,
   EmptyState,
   EmptyStateBody,
-  EmptyStateIcon,
-  Modal,
-  ModalVariant,
   Spinner,
   Title,
+  Wizard,
+  WizardStep,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalVariant,
 } from '@patternfly/react-core';
-import { Wizard } from '@patternfly/react-core/deprecated';
 import ExclamationCircleIcon from '@patternfly/react-icons/dist/js/icons/exclamation-circle-icon';
 import FormRenderer from '@data-driven-forms/react-form-renderer/form-renderer';
 import Pf4FormTemplate from '@data-driven-forms/pf4-component-mapper/form-template';
@@ -89,40 +92,27 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
 
   // Validator mapper for form validation
   const validatorMapper = {
-    'validate-account': () => (value: any) =>
+    'validate-account': () => (value: string) =>
       value && !error ? undefined : 'Please enter a valid account number',
-    'validate-org-id': () => (value: any) =>
+    'validate-org-id': () => (value: string) =>
       value && !error ? undefined : 'Please enter a valid organization ID',
-    'validate-duration': () => (value: any) => value?.length > 0,
+    'validate-duration': () => (value: string[]) => value?.length > 0,
   };
 
   // Cancel warning modal
   if (cancelWarningVisible) {
     return (
-      <Modal
-        title="Exit request creation?"
-        variant="small"
-        titleIconVariant="warning"
-        isOpen
-        onClose={onCloseCancelWarning}
-        actions={[
-          <Button
-            key="confirm"
-            variant="primary"
-            onClick={() => onClose(false)}
-          >
+      <Modal variant="small" isOpen onClose={onCloseCancelWarning}>
+        <ModalHeader title="Exit request creation?" />
+        <ModalBody>All inputs will be discarded.</ModalBody>
+        <ModalFooter>
+          <Button variant="primary" onClick={() => onClose(false)}>
             Exit
-          </Button>,
-          <Button
-            key="cancel"
-            variant="link"
-            onClick={() => setCancelWarningVisible(false)}
-          >
+          </Button>
+          <Button variant="link" onClick={() => setCancelWarningVisible(false)}>
             Stay
-          </Button>,
-        ]}
-      >
-        All inputs will be discarded.
+          </Button>
+        </ModalFooter>
       </Modal>
     );
   }
@@ -133,58 +123,51 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
       <Modal
         isOpen
         variant={ModalVariant.large}
-        showClose={false}
         className="accessRequests"
-        hasNoBodyWrapper
         aria-describedby="wiz-modal-description"
         aria-labelledby="wiz-modal-title"
       >
         <Wizard
           className="accessRequests"
           title={`${capitalize(variant)} request`}
-          steps={[
-            {
-              name: 'status',
-              component: isLoading ? (
-                <Bullseye>
-                  <Spinner />
-                </Bullseye>
-              ) : (
-                <EmptyState>
-                  {isSubmitting ? (
-                    <>
-                      <EmptyStateIcon icon={() => <Spinner size="lg" />} />
-                      <Title headingLevel="h2" size="lg">
-                        Submitting access request
-                      </Title>
-                      <Button variant="link" onClick={() => onClose(true)}>
-                        Close
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <EmptyStateIcon
-                        icon={ExclamationCircleIcon}
-                        color="#C9190B"
-                      />
-                      <Title headingLevel="h2" size="lg">
-                        {error?.title || 'An error occurred'}
-                      </Title>
+          onClose={() => onClose(true)}
+        >
+          <WizardStep name="Status" id="status-step">
+            {isLoading ? (
+              <Bullseye>
+                <Spinner />
+              </Bullseye>
+            ) : (
+              <EmptyState>
+                {isSubmitting ? (
+                  <>
+                    <Spinner size="lg" />
+                    <Title headingLevel="h2" size="lg">
+                      Submitting access request
+                    </Title>
+                    <Button variant="link" onClick={() => onClose(true)}>
+                      Close
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <EmptyState
+                      icon={ExclamationCircleIcon}
+                      titleText={error?.title || 'An error occurred'}
+                    >
                       <EmptyStateBody>{error?.description}</EmptyStateBody>
                       {error?.title !== invalidAccountTitle && (
                         <Button variant="primary" onClick={clearError}>
                           Return to Step 1
                         </Button>
                       )}
-                    </>
-                  )}
-                </EmptyState>
-              ),
-              isFinishedStep: true,
-            },
-          ]}
-          onClose={() => onClose(true)}
-        />
+                    </EmptyState>
+                  </>
+                )}
+              </EmptyState>
+            )}
+          </WizardStep>
+        </Wizard>
       </Modal>
     );
   }

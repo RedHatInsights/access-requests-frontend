@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Button, Spinner } from '@patternfly/react-core';
+import { Button, Spinner } from '@patternfly/react-core';
+import { Modal } from '@patternfly/react-core/deprecated';
 import { useCancelRequest } from './access-requests-wizard/hooks/useCancelRequest';
 
 interface CancelRequestModalViewProps {

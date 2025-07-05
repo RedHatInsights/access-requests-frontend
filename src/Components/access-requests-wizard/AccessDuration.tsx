@@ -35,7 +35,7 @@ const AccessDuration: React.FC = () => {
     <FormGroup
       label="Access duration"
       isRequired
-      labelIcon={
+      labelHelp={
         <InputHelpPopover
           bodyContent={
             <div>
@@ -63,7 +63,7 @@ const AccessDuration: React.FC = () => {
             }}
           />
         </SplitItem>
-        <SplitItem className="pf-v5-u-mt-sm">to</SplitItem>
+        <SplitItem className="pf-v6-u-mt-sm">to</SplitItem>
         <SplitItem>
           <DatePicker
             aria-label="End date"
@@ -85,47 +85,47 @@ const AccessDuration: React.FC = () => {
       <HelperText
         component="ul"
         aria-label="Validation rules for access duration"
-        className="pf-v5-u-mt-md"
+        className="pf-v6-u-mt-md"
       >
         <HelperTextItem
           variant={getStartDateFormatStatus()}
           component="li"
-          hasIcon
+          screenReaderText="Start date format validation"
         >
           Start date must be in mm/dd/yyyy format
         </HelperTextItem>
         <HelperTextItem
           variant={getStartDateTodayStatus()}
           component="li"
-          hasIcon
+          screenReaderText="Start date minimum validation"
         >
           Start date must be today or later
         </HelperTextItem>
         <HelperTextItem
           variant={getStartDateSixtyDayStatus()}
           component="li"
-          hasIcon
+          screenReaderText="Start date maximum validation"
         >
           Start date must be within 60 days of today
         </HelperTextItem>
         <HelperTextItem
           variant={getEndDateFormatStatus()}
           component="li"
-          hasIcon
+          screenReaderText="End date format validation"
         >
           End date must be in mm/dd/yyyy format
         </HelperTextItem>
         <HelperTextItem
           variant={getEndDateAfterStartStatus()}
           component="li"
-          hasIcon
+          screenReaderText="End date ordering validation"
         >
           End date must be after start date
         </HelperTextItem>
         <HelperTextItem
           variant={getEndDateOneYearStatus()}
           component="li"
-          hasIcon
+          screenReaderText="Maximum duration validation"
         >
           Access duration may not be longer than one year
         </HelperTextItem>

@@ -1,23 +1,23 @@
 import React from 'react';
 import {
+  Label,
+  LabelGroup,
   capitalize,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
   InputGroup,
   TextInput,
-  ChipGroup,
-  Chip,
   InputGroupItem,
-} from '@patternfly/react-core';
-import {
   Dropdown,
+  DropdownList,
   DropdownItem,
-  DropdownToggle,
-  DropdownToggleCheckbox,
+  MenuToggle,
+  Checkbox,
   Select,
+  SelectList,
   SelectOption,
-} from '@patternfly/react-core/deprecated';
+} from '@patternfly/react-core';
 import { FilterIcon } from '@patternfly/react-icons';
 import { useRoleToolbar } from './hooks/useRoleToolbar';
 
@@ -89,76 +89,111 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
       <Toolbar id="access-requests-roles-table-toolbar">
         <ToolbarContent>
           <ToolbarItem>
-            <Dropdown
-              onSelect={() => handleToggleBulkSelect(!state.isBulkSelectOpen)}
-              position="left"
-              toggle={
-                <DropdownToggle
-                  splitButtonItems={[
-                    <DropdownToggleCheckbox
-                      key="a"
-                      id="example-checkbox-2"
-                      aria-label={anySelected ? 'Deselect all' : 'Select all'}
-                      isChecked={isChecked}
-                      onClick={() => onSelectAll(null, !anySelected)}
-                    />,
-                  ]}
-                  onToggle={(_event, isOpen) => handleToggleBulkSelect(isOpen)}
-                  disabled={rows.length === 0}
-                >
-                  {selectedRoles.length !== 0 && (
-                    <React.Fragment>
-                      {selectedRoles.length} selected
-                    </React.Fragment>
-                  )}
-                </DropdownToggle>
-              }
-              isOpen={state.isBulkSelectOpen}
-              dropdownItems={[
-                <DropdownItem key="0" onClick={() => onSelectAll(null, false)}>
-                  Select none (0 items)
-                </DropdownItem>,
-                <DropdownItem
-                  key="1"
-                  onClick={() =>
-                    setSelectedRoles(
-                      selectedRoles.concat(pagedRows.map((r) => r.display_name))
-                    )
-                  }
-                >
-                  Select page ({Math.min(pagedRows.length, perPage)} items)
-                </DropdownItem>,
-                <DropdownItem key="2" onClick={() => onSelectAll(null, true)}>
-                  Select all ({filteredRows.length} items)
-                </DropdownItem>,
-              ]}
-            />
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Checkbox
+                id="bulk-select-checkbox"
+                aria-label={anySelected ? 'Deselect all' : 'Select all'}
+                isChecked={isChecked}
+                onChange={(
+                  event: React.FormEvent<HTMLInputElement>,
+                  checked: boolean
+                ) => onSelectAll(event, checked)}
+                isDisabled={rows.length === 0}
+              />
+              <Dropdown
+                onSelect={() => handleToggleBulkSelect(!state.isBulkSelectOpen)}
+                isOpen={state.isBulkSelectOpen}
+                onOpenChange={(isOpen: boolean) =>
+                  handleToggleBulkSelect(isOpen)
+                }
+                toggle={(toggleRef: React.Ref<any>) => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    onClick={() =>
+                      handleToggleBulkSelect(!state.isBulkSelectOpen)
+                    }
+                    isExpanded={state.isBulkSelectOpen}
+                    variant="plain"
+                    isDisabled={rows.length === 0}
+                    aria-label="Bulk select options"
+                  >
+                    {selectedRoles.length !== 0 && (
+                      <React.Fragment>
+                        {selectedRoles.length} selected
+                      </React.Fragment>
+                    )}
+                  </MenuToggle>
+                )}
+              >
+                <DropdownList>
+                  <DropdownItem
+                    onClick={(event: React.MouseEvent) =>
+                      onSelectAll(event, false)
+                    }
+                  >
+                    Select none (0 items)
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() =>
+                      setSelectedRoles(
+                        selectedRoles.concat(
+                          pagedRows.map((r) => r.display_name)
+                        )
+                      )
+                    }
+                  >
+                    Select page ({Math.min(pagedRows.length, perPage)} items)
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={(event: React.MouseEvent) =>
+                      onSelectAll(event, true)
+                    }
+                  >
+                    Select all ({filteredRows.length} items)
+                  </DropdownItem>
+                </DropdownList>
+              </Dropdown>
+            </div>
           </ToolbarItem>
           <ToolbarItem>
             <InputGroup>
               <InputGroupItem>
                 <Dropdown
                   isOpen={state.isDropdownOpen}
-                  onSelect={handleFilterColumnSelect}
-                  toggle={
-                    <DropdownToggle
-                      onToggle={(_event, isOpen) =>
-                        handleToggleDropdown(isOpen)
-                      }
-                    >
-                      <FilterIcon /> {state.filterColumn}
-                    </DropdownToggle>
+                  onSelect={(
+                    event?: React.MouseEvent<Element, MouseEvent>,
+                    value?: string | number
+                  ) => {
+                    if (value) {
+                      handleFilterColumnSelect(value.toString());
+                    }
+                  }}
+                  onOpenChange={(isOpen: boolean) =>
+                    handleToggleDropdown(isOpen)
                   }
-                  dropdownItems={['Role name', 'Application'].map((colName) => (
-                    <DropdownItem
-                      key={colName}
-                      value={colName}
-                      component="button"
+                  toggle={(toggleRef: React.Ref<any>) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={() =>
+                        handleToggleDropdown(!state.isDropdownOpen)
+                      }
+                      isExpanded={state.isDropdownOpen}
+                      icon={<FilterIcon />}
                     >
-                      {capitalize(colName)}
-                    </DropdownItem>
-                  ))}
-                />
+                      {state.filterColumn}
+                    </MenuToggle>
+                  )}
+                >
+                  <DropdownList>
+                    {['Role name', 'Application'].map((colName) => (
+                      <DropdownItem key={colName} value={colName}>
+                        {capitalize(colName)}
+                      </DropdownItem>
+                    ))}
+                  </DropdownList>
+                </Dropdown>
               </InputGroupItem>
               {state.filterColumn === 'Application' ? (
                 <React.Fragment>
@@ -167,21 +202,45 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
                   </span>
                   <Select
                     aria-labelledby={selectLabelId}
-                    variant="checkbox"
                     aria-label="Select applications"
-                    onToggle={(_event, isOpen) => handleToggleSelect(isOpen)}
-                    onSelect={handleAppSelection}
                     isOpen={state.isSelectOpen}
-                    selections={appSelections}
-                    isCheckboxSelectionBadgeHidden
-                    placeholderText={selectPlaceholder}
-                    className="select-toolbar"
+                    selected={appSelections}
+                    onSelect={(
+                      event?: React.MouseEvent<Element, MouseEvent>,
+                      value?: string | number
+                    ) => {
+                      if (value) {
+                        handleAppSelection(value.toString());
+                      }
+                    }}
+                    onOpenChange={(isOpen: boolean) =>
+                      handleToggleSelect(isOpen)
+                    }
+                    toggle={(toggleRef: React.Ref<any>) => (
+                      <MenuToggle
+                        ref={toggleRef}
+                        onClick={() => handleToggleSelect(!state.isSelectOpen)}
+                        isExpanded={state.isSelectOpen}
+                        style={{ width: '200px' }}
+                      >
+                        {appSelections.length > 0
+                          ? `${appSelections.length} selected`
+                          : selectPlaceholder}
+                      </MenuToggle>
+                    )}
                   >
-                    {applications.map((app) => (
-                      <SelectOption key={app} value={app}>
-                        {capitalize(app.replace(/-/g, ' '))}
-                      </SelectOption>
-                    ))}
+                    <SelectList>
+                      {applications.map((app) => (
+                        <SelectOption
+                          key={app}
+                          value={app}
+                          hasCheckbox
+                          isSelected={appSelections.includes(app)}
+                        >
+                          {capitalize(app.replace(/-/g, ' '))}
+                        </SelectOption>
+                      ))}
+                    </SelectList>
                   </Select>
                 </React.Fragment>
               ) : (
@@ -192,37 +251,43 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
                   aria-label="Search input"
                   placeholder="Filter by role name"
                   value={nameFilter}
-                  onChange={(_event, val) => setNameFilter(val)}
+                  onChange={(
+                    event: React.FormEvent<HTMLInputElement>,
+                    val: string
+                  ) => setNameFilter(val)}
                 />
               )}
             </InputGroup>
           </ToolbarItem>
-          <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+          <ToolbarItem variant="pagination" align={{ default: 'alignEnd' }}>
             <AccessRequestsPagination id="top" />
           </ToolbarItem>
         </ToolbarContent>
         {hasFilters && (
           <ToolbarContent>
             {nameFilter && (
-              <ChipGroup categoryName="Role name">
-                <Chip onClick={() => setNameFilter('')}>{nameFilter}</Chip>
-              </ChipGroup>
+              <LabelGroup categoryName="Role name">
+                <Label variant="outline" onClose={() => setNameFilter('')}>
+                  {nameFilter}
+                </Label>
+              </LabelGroup>
             )}
             {appSelections.length > 0 && (
-              <ChipGroup categoryName="Status">
+              <LabelGroup categoryName="Status">
                 {appSelections.map((status) => (
-                  <Chip
+                  <Label
+                    variant="outline"
                     key={status}
-                    onClick={() =>
+                    onClose={() =>
                       setAppSelections((prev) =>
                         prev.filter((s) => s !== status)
                       )
                     }
                   >
                     {status}
-                  </Chip>
+                  </Label>
                 ))}
-              </ChipGroup>
+              </LabelGroup>
             )}
             {clearFiltersButton}
           </ToolbarContent>

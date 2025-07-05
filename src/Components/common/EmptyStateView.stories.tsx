@@ -2,10 +2,6 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 import { Button } from '@patternfly/react-core';
 import { EmptyStateView } from './EmptyStateView';
-import SearchIcon from '@patternfly/react-icons/dist/js/icons/search-icon';
-import PlusCircleIcon from '@patternfly/react-icons/dist/js/icons/plus-circle-icon';
-import ExclamationCircleIcon from '@patternfly/react-icons/dist/js/icons/exclamation-circle-icon';
-import CubesIcon from '@patternfly/react-icons/dist/js/icons/cubes-icon';
 
 const meta: Meta<typeof EmptyStateView> = {
   component: EmptyStateView,
@@ -54,7 +50,6 @@ export const NoDataLarge: Story = {
   args: {
     title: 'No access requests',
     description: 'Click the button below to create an access request.',
-    icon: PlusCircleIcon,
     variant: 'lg',
     headingLevel: 'h3',
     actions: createButton,
@@ -74,7 +69,6 @@ export const NoSearchResults: Story = {
     title: 'No matching requests found',
     description:
       'No results match the filter criteria. Remove all filters or clear all filters to show results.',
-    icon: SearchIcon,
     variant: 'sm',
     headingLevel: 'h2',
     actions: clearFiltersButton,
@@ -95,8 +89,6 @@ export const ErrorState: Story = {
     title: 'An error occurred',
     description:
       'Something went wrong while loading the data. Please try again.',
-    icon: ExclamationCircleIcon,
-    iconColor: '#C9190B',
     variant: 'lg',
     headingLevel: 'h2',
     actions: retryButton,
@@ -115,7 +107,6 @@ export const ExtraSmall: Story = {
   args: {
     title: 'No items',
     description: 'There are no items to display.',
-    icon: CubesIcon,
     variant: 'xs',
   },
   parameters: {
@@ -132,7 +123,6 @@ export const ExtraLarge: Story = {
     title: 'Welcome to Access Requests',
     description:
       'Get started by creating your first access request or explore the documentation to learn more.',
-    icon: PlusCircleIcon,
     variant: 'xl',
     headingLevel: 'h1',
     actions: createButton,
@@ -152,7 +142,6 @@ export const MultipleActions: Story = {
     title: 'No data sources configured',
     description:
       'You can create a new data source or import from an existing configuration.',
-    icon: CubesIcon,
     variant: 'lg',
     actions: multipleActions,
   },
@@ -201,7 +190,6 @@ export const CustomerViewNoRequests: Story = {
   args: {
     title: 'You have no access requests',
     description: 'You have no pending Red Hat access requests.',
-    icon: PlusCircleIcon,
     variant: 'lg',
     headingLevel: 'h3',
   },
@@ -220,8 +208,6 @@ export const PermissionError: Story = {
     title: 'Invalid Account number',
     description:
       'The account number provided is not valid or you do not have permission to access it.',
-    icon: ExclamationCircleIcon,
-    iconColor: '#C9190B',
     variant: 'lg',
     headingLevel: 'h2',
   },

@@ -22,7 +22,7 @@ const SetName: React.FC<SetNameProps> = (props) => {
         <FormGroup
           label="First name"
           name="first-name"
-          labelIcon={
+          labelHelp={
             <InputHelpPopover bodyContent={popoverBody} field="first name" />
           }
         >
@@ -37,7 +37,7 @@ const SetName: React.FC<SetNameProps> = (props) => {
         <FormGroup
           label="Last name"
           name="last-name"
-          labelIcon={
+          labelHelp={
             <InputHelpPopover bodyContent={popoverBody} field="last name" />
           }
         >

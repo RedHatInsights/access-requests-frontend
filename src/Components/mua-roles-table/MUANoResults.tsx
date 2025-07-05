@@ -1,9 +1,7 @@
 import React from 'react';
 import {
   EmptyState,
-  EmptyStateIcon,
   EmptyStateBody,
-  EmptyStateHeader,
   EmptyStateFooter,
 } from '@patternfly/react-core';
 import { Tbody, Tr, Td } from '@patternfly/react-table';
@@ -22,12 +20,12 @@ const MUANoResults: React.FC<MUANoResultsProps> = ({
     <Tbody>
       <Tr>
         <Td colSpan={columns.length}>
-          <EmptyState variant="sm">
-            <EmptyStateHeader
-              titleText="No matching requests found"
-              icon={<EmptyStateIcon icon={SearchIcon} />}
-              headingLevel="h2"
-            />
+          <EmptyState
+            headingLevel="h2"
+            icon={SearchIcon}
+            titleText="No matching requests found"
+            variant="sm"
+          >
             <EmptyStateBody>
               No results match the filter criteria. Remove all filters or clear
               all filters to show results.

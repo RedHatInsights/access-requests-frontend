@@ -1,6 +1,4 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
 import apiInstance from '../../../Helpers/apiInstance';
 import {
   ACCESS_FROM,
@@ -10,6 +8,7 @@ import {
   SELECTED_ROLES,
 } from '../schema';
 import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
+import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 
 // Global variable declarations
 declare const API_BASE: string;
@@ -76,7 +75,6 @@ export const useAccessRequestWizard = ({
   variant,
   onClose,
 }: UseAccessRequestWizardProps): UseAccessRequestWizardReturn => {
-  const dispatch = useDispatch();
   const isEdit = variant === 'edit';
 
   const [cancelWarningVisible, setCancelWarningVisible] =
@@ -87,6 +85,7 @@ export const useAccessRequestWizard = ({
   const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
   const [user, setUser] = React.useState<User>();
   const chrome = useChrome();
+  const addNotification = useAddNotification();
 
   // Load user data and request details (if editing)
   React.useEffect(() => {
@@ -147,15 +146,13 @@ export const useAccessRequestWizard = ({
       })
       .catch((err: Error) => {
         setIsLoading(false);
-        dispatch(
-          addNotification({
-            variant: 'danger',
-            title: 'Could not load access request',
-            description: err.message,
-          })
-        );
+        addNotification({
+          variant: 'danger',
+          title: 'Could not load access request',
+          description: err.message,
+        });
       });
-  }, [isEdit, requestId, dispatch]);
+  }, [isEdit, requestId, addNotification]);
 
   const onSubmit = React.useCallback(
     (values: FormValues) => {
@@ -196,13 +193,11 @@ export const useAccessRequestWizard = ({
             throw new Error(res.errors[0].detail);
           }
 
-          dispatch(
-            addNotification({
-              variant: 'success',
-              title: `${isEdit ? 'Edited' : 'Created'} access request`,
-              description: res.request_id,
-            })
-          );
+          addNotification({
+            variant: 'success',
+            title: `${isEdit ? 'Edited' : 'Created'} access request`,
+            description: res.request_id,
+          });
 
           onClose(true);
         })
@@ -227,7 +222,7 @@ export const useAccessRequestWizard = ({
           setIsSubmitting(false);
         });
     },
-    [isEdit, requestId, variant, onClose, dispatch]
+    [isEdit, requestId, variant, onClose, addNotification]
   );
 
   const onCancel = React.useCallback(() => {

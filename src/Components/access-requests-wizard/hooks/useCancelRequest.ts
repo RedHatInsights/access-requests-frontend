@@ -1,7 +1,6 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
-import { addNotification } from '@redhat-cloud-services/frontend-components-notifications/redux';
 import apiInstance from '../../../Helpers/apiInstance';
+import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 
 // Global variable declaration
 declare const API_BASE: string;
@@ -21,7 +20,7 @@ export const useCancelRequest = ({
   onClose,
 }: UseCancelRequestProps): UseCancelRequestReturn => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const dispatch = useDispatch();
+  const addNotification = useAddNotification();
 
   const onCancel = () => {
     setIsLoading(true);
@@ -46,23 +45,19 @@ export const useCancelRequest = ({
         }
 
         onClose(true);
-        dispatch(
-          addNotification({
-            variant: 'success',
-            title: 'Request cancelled successfully',
-          })
-        );
+        addNotification({
+          variant: 'success',
+          title: 'Request cancelled successfully',
+        });
       })
       .catch((err: Error) => {
         console.error(err);
         setIsLoading(false);
-        dispatch(
-          addNotification({
-            variant: 'danger',
-            title: 'Could not cancel request',
-            description: err.message,
-          })
-        );
+        addNotification({
+          variant: 'danger',
+          title: 'Could not cancel request',
+          description: err.message,
+        });
       });
   };
 

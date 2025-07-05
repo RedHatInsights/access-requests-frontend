@@ -319,9 +319,9 @@ export function MUARolesTableView({
               />
             )}
             <Td dataLabel={columns[0]}>{row.display_name}</Td>
-            <Td dataLabel={columns[1]} className="pf-v5-m-truncate">
+            <Td dataLabel={columns[1]} className="pf-v6-m-truncate">
               <Tooltip entryDelay={1000} content={row.description}>
-                <span className="pf-v5-m-truncate pf-v5-c-table__text">
+                <span className="pf-v6-m-truncate pf-v6-c-table__text">
                   {row.description}
                 </span>
               </Tooltip>
@@ -330,12 +330,12 @@ export function MUARolesTableView({
               dataLabel={columns[2]}
               className={css(
                 'pf-c-table__compound-expansion-toggle',
-                isRoleExpanded(row) && 'pf-v5-m-expanded'
+                isRoleExpanded(row) && 'pf-v6-m-expanded'
               )}
             >
               <button
                 type="button"
-                className="pf-v5-c-table__button"
+                className="pf-v6-c-table__button"
                 onClick={() => onExpand(row)}
               >
                 {row.permissions}
@@ -346,8 +346,8 @@ export function MUARolesTableView({
           {/* Expanded row for permissions */}
           <Tr isExpanded={isRoleExpanded(row)}>
             {!isReadOnly && <Td />}
-            <Td className="pf-v5-u-p-0" colSpan={3}>
-              <Table className="pf-v5-m-no-border-rows">
+            <Td className="pf-v6-u-p-0" colSpan={3}>
+              <Table className="pf-v6-m-no-border-rows">
                 <Thead>
                   <Tr>
                     {expandedColumns.map((col) => (

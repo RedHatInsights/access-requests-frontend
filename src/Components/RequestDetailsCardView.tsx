@@ -50,14 +50,14 @@ export function RequestDetailsCardView({
           <Spinner size="xl" />
         ) : (
           <React.Fragment>
-            <div className="pf-v5-u-pb-md">
+            <div className="pf-v6-u-pb-md">
               {isInternal ? (
                 <div>
                   <label>
                     <b>Request status</b>
                   </label>
                   <br />
-                  <Label className="pf-v5-u-mt-sm" {...getLabelProps(status)}>
+                  <Label className="pf-v6-u-mt-sm" {...getLabelProps(status)}>
                     {capitalize(status)}
                   </Label>
                 </div>
@@ -72,7 +72,7 @@ export function RequestDetailsCardView({
               )}
             </div>
             {displayProps.map((prop, key) => (
-              <div className="pf-v5-u-pb-md" key={key}>
+              <div className="pf-v6-u-pb-md" key={key}>
                 <label>
                   <b>
                     {capitalize(prop.replace(/_/g, ' ').replace('id', 'ID'))}
