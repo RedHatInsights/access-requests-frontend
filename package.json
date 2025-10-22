@@ -49,7 +49,7 @@
     "@redhat-cloud-services/frontend-components-config": "^6.4.5",
     "@redhat-cloud-services/tsc-transform-imports": "^1.0.6",
     "@storybook/addon-docs": "^9.0.14",
-    "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
+    "@storybook/addon-webpack5-compiler-swc": "^4.0.0",
     "@storybook/react-webpack5": "^9.0.14",
     "@testing-library/react": "^14.1.2",
     "@testing-library/user-event": "^14.6.1",
