@@ -45,7 +45,7 @@
     "@babel/preset-env": "^7.23.8",
     "@babel/preset-react": "^7.23.3",
     "@patternfly/patternfly": "^6.2.3",
-    "@redhat-cloud-services/eslint-config-redhat-cloud-services": "^2.0.3",
+    "@redhat-cloud-services/eslint-config-redhat-cloud-services": "^3.0.0",
     "@redhat-cloud-services/frontend-components-config": "^6.4.5",
     "@redhat-cloud-services/tsc-transform-imports": "^1.0.6",
     "@storybook/addon-docs": "^9.0.14",
