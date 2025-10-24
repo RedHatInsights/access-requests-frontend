@@ -82,7 +82,7 @@
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",
     "sass": "^1.93.2",
-    "sass-loader": "^14.2.1",
+    "sass-loader": "^16.0.0",
     "source-map-loader": "^5.0.0",
     "storybook": "^9.1.13",
     "storybook-addon-mock-date": "^1.0.2",
