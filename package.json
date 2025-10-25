@@ -30,8 +30,8 @@
     "@redhat-cloud-services/frontend-components-notifications": "^6.1.13",
     "@unleash/proxy-client-react": "^4.5.2",
     "axios": "^1.12.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "react-redux": "^7.2.9",
     "react-router-dom": "^6.30.1",
     "redux": "^4.2.1"
