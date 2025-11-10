@@ -26,7 +26,7 @@
     "@patternfly/react-component-groups": "^6.4.0",
     "@patternfly/react-core": "^6.4.0",
     "@patternfly/react-table": "^6.4.0",
-    "@redhat-cloud-services/frontend-components": "^6.1.1",
+    "@redhat-cloud-services/frontend-components": "^7.0.0",
     "@redhat-cloud-services/frontend-components-notifications": "^6.1.13",
     "@unleash/proxy-client-react": "^4.5.2",
     "axios": "^1.12.2",
