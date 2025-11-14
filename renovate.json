@@ -3,5 +3,20 @@
   "baseBranches": ["master"],
   "tekton": {
     "schedule": ["at any time"]
-  }
+  },
+  "extends": ["config:base"],
+  "packageRules": [
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm minor and patch dependencies",
+      "enabled": true
+    },
+    {
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ],
+  "semanticCommits": "enabled"
 }
