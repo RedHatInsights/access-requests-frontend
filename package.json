@@ -21,7 +21,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@babel/runtime": "7.28.4",
+    "@babel/runtime": "7.28.6",
     "@data-driven-forms/pf4-component-mapper": "^4.1.1",
     "@patternfly/react-component-groups": "^6.4.0",
     "@patternfly/react-core": "^6.4.0",
