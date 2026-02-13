@@ -1,0 +1,34 @@
+name: Chromatic Upload
+
+on:
+  workflow_run:
+    workflows: ["Chromatic Build"]
+    types: [completed]
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    # Guard to ensure we only run on successful builds from the target repo
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout Base Repository
+        uses: actions/checkout@v4
+        with:
+          # Always use the default branch version of this script
+          persist-credentials: false
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: storybook-static
+          run_id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Chromatic
+        uses: chromaui/action@v1
+        with:
+          # Secret is only available here, in a privileged context
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          storybookBuildDir: storybook-static
