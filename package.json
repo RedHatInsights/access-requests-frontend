@@ -23,7 +23,9 @@
   },
   "dependencies": {
     "@babel/runtime": "7.28.6",
-    "@data-driven-forms/pf4-component-mapper": "^4.1.1",
+    "@data-driven-forms/common": "^4.1.12",
+    "@data-driven-forms/pf4-component-mapper": "^4.1.13",
+    "@data-driven-forms/react-form-renderer": "^4.1.12",
     "@patternfly/react-component-groups": "^6.4.0",
     "@patternfly/react-core": "^6.4.0",
     "@patternfly/react-table": "^6.4.0",
