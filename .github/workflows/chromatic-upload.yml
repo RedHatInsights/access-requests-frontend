@@ -12,21 +12,40 @@ jobs:
       github.event.workflow_run.conclusion == 'success' &&
       (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push')
     steps:
+      # Checkout base repo with full history — Chromatic needs git log to find
+      # the baseline commit. We always check out the default branch (not the PR
+      # branch) so that no untrusted code from forks is ever executed.
       - name: Checkout Base Repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
           name: storybook-static
-          # Fixed parameter name from run_id to run-id
+          path: storybook-static
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Chromatic
+        id: chromatic
         uses: chromaui/action@v1
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           storybookBuildDir: storybook-static
+          # Auto-accept changes on master (push) to establish the visual baseline.
+          # PR builds are left for review.
+          autoAcceptChanges: ${{ github.event.workflow_run.event == 'push' }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Run Storybook tests
+        run: npm run test-storybook -- --url ${{ steps.chromatic.outputs.storybookUrl }}
+        env:
+          CI: true
