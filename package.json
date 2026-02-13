@@ -18,7 +18,8 @@
     "postinstall": "ts-patch install",
     "verify": "npm-run-all build lint test",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test-storybook": "test-storybook --excludeTags test-skip"
   },
   "dependencies": {
     "@babel/runtime": "7.28.6",
@@ -51,6 +52,7 @@
     "@storybook/addon-docs": "^9.1.13",
     "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
     "@storybook/react-webpack5": "^9.1.13",
+    "@storybook/test-runner": "^0.23.0",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.6.1",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
