@@ -45,7 +45,12 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps
 
+      # Serve the storybook artifact locally instead of relying on the remote
+      # Chromatic URL, which may not be immediately reachable after publish.
       - name: Run Storybook tests
-        run: npm run test-storybook -- --url ${{ steps.chromatic.outputs.storybookUrl }}
+        run: |
+          npx http-server storybook-static --port 6006 --silent &
+          npx wait-on http://localhost:6006
+          npm run test-storybook -- --url http://localhost:6006
         env:
           CI: true
