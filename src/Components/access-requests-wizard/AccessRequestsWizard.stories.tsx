@@ -144,23 +144,17 @@ export const CompleteCreateFlow: Story = {
     onClose: () => console.log('Request created successfully'),
   },
   play: async () => {
-    // Use screen instead of screen since modal is appended to document.body
+    // Use screen since modal is appended to document.body (outside canvasElement)
 
     // Wait for wizard modal to appear and load
     await waitFor(
       () => {
-        // Look for the wizard title or step content in the document
-        const wizardTitle = screen.queryByText('Create request');
-        const stepTitle = screen.queryByText('Request details', {
-          selector: 'h1',
-        });
-        return wizardTitle || stepTitle;
+        expect(
+          screen.getByText('Request details', { selector: 'h1' })
+        ).toBeInTheDocument();
       },
-      { timeout: 5000 }
+      { timeout: 10000 }
     );
-
-    // Verify we're on the first step
-    expect(screen.queryByText('Request details', { selector: 'h1' }));
 
     // Fill in the account number
     const accountInput = screen.getAllByLabelText(/account number/i)[0];
