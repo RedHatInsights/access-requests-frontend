@@ -25,11 +25,9 @@ import AccessDuration from './AccessDuration';
 import SetName from './SetName';
 import schemaBuilder from './schema';
 import { useAccessRequestWizard } from './hooks/useAccessRequestWizard';
-import FormTemplateCommonProps from '@data-driven-forms/common/form-template';
-
 const invalidAccountTitle = 'Invalid Account number';
 
-const FormTemplate: React.FC<FormTemplateCommonProps> = (props) => (
+const FormTemplate = (props: Record<string, unknown>) => (
   <Pf4FormTemplate {...props} showFormControls={false} />
 );
 
