@@ -22,7 +22,7 @@
     "test-storybook": "test-storybook --excludeTags test-skip"
   },
   "dependencies": {
-    "@babel/runtime": "7.28.6",
+    "@babel/runtime": "7.29.2",
     "@data-driven-forms/common": "^4.1.12",
     "@data-driven-forms/pf4-component-mapper": "^4.1.13",
     "@data-driven-forms/react-form-renderer": "^4.1.12",
@@ -54,7 +54,7 @@
     "@storybook/addon-docs": "^9.1.13",
     "@storybook/addon-webpack5-compiler-swc": "^3.0.0",
     "@storybook/react-webpack5": "^9.1.13",
-    "@storybook/test-runner": "^0.23.0",
+    "@storybook/test-runner": "^0.24.0",
     "@testing-library/react": "^14.3.1",
     "@testing-library/user-event": "^14.6.1",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
