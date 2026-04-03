@@ -12,7 +12,6 @@ const mockAccessRequestsData = {
   data: [
     {
       request_id: '12345',
-      target_account: '1234567',
       target_org: '7654321',
       status: 'pending',
       start_date: '2024-01-15T10:00:00Z',
@@ -31,7 +30,6 @@ const mockAccessRequestsData = {
     },
     {
       request_id: '12346',
-      target_account: '1234568',
       target_org: '7654322',
       status: 'approved',
       start_date: '2024-01-01T10:00:00Z',
@@ -50,7 +48,6 @@ const mockAccessRequestsData = {
     },
     {
       request_id: '12347',
-      target_account: '1234569',
       target_org: '7654323',
       status: 'denied',
       start_date: '2024-01-20T10:00:00Z',

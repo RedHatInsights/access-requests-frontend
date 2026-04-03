@@ -106,7 +106,7 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
       isInternal
         ? [
             'Request ID',
-            'Account number',
+            'Organization ID',
             'Account name',
             'Start date',
             'End date',
@@ -147,7 +147,7 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
 
   // Filtering logic
   const filtering = useAccessRequestsFiltering({ isInternal, columns });
-  const debouncedAccountFilter = useDebounce(filtering.accountFilter, 400);
+  const debouncedOrgIdFilter = useDebounce(filtering.orgIdFilter, 400);
 
   // Data fetching
   const { isLoading, numRows, rows, fetchAccessRequests } =
@@ -157,7 +157,7 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
       perPage,
       activeSortIndex,
       activeSortDirection,
-      accountFilter: debouncedAccountFilter,
+      orgIdFilter: debouncedOrgIdFilter,
       statusSelections: filtering.statusSelections,
       columns,
     });
@@ -360,8 +360,8 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
               </React.Fragment>
             )}
 
-            {/* Account number filter */}
-            {filtering.filterColumn === 'Account number' && (
+            {/* Organization ID filter */}
+            {filtering.filterColumn === 'Organization ID' && (
               <form
                 style={{ display: 'flex' }}
                 onSubmit={(event) => event.preventDefault()}
@@ -374,9 +374,9 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
                     filtering.filterColumn
                   )}`}
                   aria-label={`${filtering.filterColumn} search input`}
-                  value={filtering.accountFilter}
+                  value={filtering.orgIdFilter}
                   onChange={(_event, val) => {
-                    filtering.setAccountFilter(val);
+                    filtering.setOrgIdFilter(val);
                     filtering.setFiltersDirty(true);
                     setPage(1);
                   }}
@@ -420,16 +420,16 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
             </Label>
           ))}
         </LabelGroup>
-        {filtering.accountFilter && (
-          <LabelGroup categoryName="Account number">
+        {filtering.orgIdFilter && (
+          <LabelGroup categoryName="Organization ID">
             <Label
               variant="outline"
               onClose={() => {
-                filtering.setAccountFilter('');
+                filtering.setOrgIdFilter('');
                 setPage(1);
               }}
             >
-              {filtering.accountFilter}
+              {filtering.orgIdFilter}
             </Label>
           </LabelGroup>
         )}

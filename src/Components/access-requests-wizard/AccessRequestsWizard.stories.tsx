@@ -71,7 +71,6 @@ const meta: Meta<typeof AccessRequestsWizard> = {
           ({ params }) => {
             return HttpResponse.json({
               request_id: params.requestId,
-              target_account: '123456789',
               target_org: '987654321',
               start_date: getValidDate(0),
               end_date: getValidDate(8),
@@ -156,11 +155,6 @@ export const CompleteCreateFlow: Story = {
       { timeout: 10000 }
     );
 
-    // Fill in the account number
-    const accountInput = screen.getAllByLabelText(/account number/i)[0];
-    await userEvent.clear(accountInput);
-    await userEvent.type(accountInput, '123456789');
-
     // Fill in organization ID
     const orgInput = screen.getAllByLabelText(/organization id/i)[0];
     await userEvent.clear(orgInput);
@@ -241,8 +235,8 @@ export const CancelWarning: Story = {
     });
 
     // Fill in some data first
-    const accountInput = screen.getByPlaceholderText('Example, 8675309');
-    await userEvent.type(accountInput, '123456789');
+    const orgInput = screen.getByPlaceholderText('Example, 1234567');
+    await userEvent.type(orgInput, '987654321');
 
     // Click cancel
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
@@ -284,7 +278,6 @@ export const LoadingState: Story = {
             await new Promise((resolve) => setTimeout(resolve, 500));
             return HttpResponse.json({
               request_id: params.requestId,
-              target_account: '123456789',
               target_org: '987654321',
               start_date: getValidDate(0),
               end_date: getValidDate(8),
@@ -307,9 +300,9 @@ export const LoadingState: Story = {
 };
 
 /**
- * Test error state with invalid account
+ * Test error state with invalid organization ID
  */
-export const InvalidAccountError: Story = {
+export const InvalidOrgIdError: Story = {
   parameters: {
     msw: {
       handlers: [
@@ -341,14 +334,14 @@ export const InvalidAccountError: Story = {
           });
         }),
 
-        // Mock invalid account error
+        // Mock invalid org ID error
         http.post('/api/rbac/v1/cross-account-requests/', () => {
           return HttpResponse.json(
             {
               errors: [
                 {
-                  detail: 'Account 999999999 does not exist',
-                  message: 'Account 999999999 does not exist',
+                  detail: 'Organization 999999999 does not exist',
+                  message: 'Organization 999999999 does not exist',
                 },
               ],
             },
@@ -370,10 +363,7 @@ export const InvalidAccountError: Story = {
       ).toBeInTheDocument();
     });
 
-    // Fill in invalid account details
-    const accountInput = screen.getByPlaceholderText('Example, 8675309');
-    await userEvent.type(accountInput, '999999999');
-
+    // Fill in invalid org ID
     const orgInput = screen.getByPlaceholderText('Example, 1234567');
     await userEvent.type(orgInput, '999999999');
 
@@ -413,7 +403,9 @@ export const InvalidAccountError: Story = {
 
     // Should show error
     await waitFor(() => {
-      expect(screen.getByText('Invalid Account number')).toBeInTheDocument();
+      expect(
+        screen.getByText('Could not create access request')
+      ).toBeInTheDocument();
     });
   },
 };
@@ -435,14 +427,10 @@ export const EditRequestFlow: Story = {
 
     // Verify pre-filled data
     await waitFor(() => {
-      expect(screen.getByDisplayValue('123456789')).toBeInTheDocument(); // Account number
       expect(screen.getByDisplayValue('987654321')).toBeInTheDocument(); // Org ID
     });
 
-    // Account and org fields should be disabled in edit mode
-    const accountInput = screen.getByDisplayValue('123456789');
-    expect(accountInput).toBeDisabled();
-
+    // Org ID field should be disabled in edit mode
     const orgInput = screen.getByDisplayValue('987654321');
     expect(orgInput).toBeDisabled();
 

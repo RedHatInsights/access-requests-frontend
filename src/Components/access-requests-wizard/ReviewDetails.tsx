@@ -12,7 +12,7 @@ import { useReviewDetails } from './hooks/useReviewDetails';
 
 interface ReviewData {
   accountName: string;
-  accountNumber: string;
+  orgId: string;
   accessFrom: string;
   accessTo: string;
   selectedRoles: string[];
@@ -53,13 +53,11 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
                 component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
-                Account number
+                Organization ID
               </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
-              <Content component={ContentVariants.p}>
-                {data.accountNumber}
-              </Content>
+              <Content component={ContentVariants.p}>{data.orgId}</Content>
             </GridItem>
           </Grid>
         </StackItem>
@@ -130,7 +128,6 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
 };
 
 interface ReviewDetailsProps {
-  targetAccount?: any;
   start?: any;
   end?: any;
   roles?: any;

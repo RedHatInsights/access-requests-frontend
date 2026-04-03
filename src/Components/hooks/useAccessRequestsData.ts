@@ -9,7 +9,7 @@ declare const API_BASE: string;
 
 interface AccessRequestData {
   request_id: string;
-  target_account: string;
+  target_org: string;
   first_name: string;
   last_name: string;
   start_date: string;
@@ -34,7 +34,7 @@ interface UseAccessRequestsDataProps {
   perPage: number;
   activeSortIndex: number;
   activeSortDirection: 'asc' | 'desc';
-  accountFilter: string;
+  orgIdFilter: string;
   statusSelections: string[];
   columns: string[];
 }
@@ -53,7 +53,7 @@ export const useAccessRequestsData = ({
   perPage,
   activeSortIndex,
   activeSortDirection,
-  accountFilter,
+  orgIdFilter,
   statusSelections,
   columns,
 }: UseAccessRequestsDataProps): UseAccessRequestsDataReturn => {
@@ -91,8 +91,8 @@ export const useAccessRequestsData = ({
     listUrl.searchParams.append('limit', String(perPage));
 
     // Filter parameters
-    if (accountFilter) {
-      listUrl.searchParams.append('account', accountFilter);
+    if (orgIdFilter) {
+      listUrl.searchParams.append('org_id', orgIdFilter);
     }
     if (statusSelections.length > 0) {
       listUrl.searchParams.append('status', statusSelections.join(','));
@@ -119,7 +119,7 @@ export const useAccessRequestsData = ({
           isInternal
             ? [
                 d.request_id,
-                d.target_account,
+                d.target_org,
                 `${d.first_name || ''}${d.last_name ? ' ' : ''}${
                   d.last_name || ''
                 }`.trim(),
@@ -159,7 +159,7 @@ export const useAccessRequestsData = ({
     perPage,
     activeSortIndex,
     activeSortDirection,
-    accountFilter,
+    orgIdFilter,
     statusSelections,
     columns,
     isOrgAdmin,
