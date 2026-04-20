@@ -128,7 +128,6 @@ const createMockRequest = (
   roleCount = 3
 ) => ({
   request_id: 'AR-2024-001234',
-  target_account: '1234567890',
   target_org: '9876543210',
   first_name: 'John',
   last_name: 'Doe',
@@ -154,7 +153,6 @@ const createMockRequest = (
 
 const mockInternalDisplayProps = [
   'request_id',
-  'target_account',
   'target_org',
   'start_date',
   'end_date',

@@ -20,7 +20,6 @@ type Story = StoryObj<typeof meta>;
 // Base request object for reuse
 const baseRequest = {
   request_id: 'AR-2024-001234',
-  target_account: '1234567890',
   target_org: '9876543210',
   first_name: 'John',
   last_name: 'Doe',
@@ -49,7 +48,6 @@ const baseArgs = {
   isInternal: true,
   requestId: 'AR-2024-001234',
   requestDisplayProps: [
-    'target_account',
     'target_org',
     'first_name',
     'last_name',

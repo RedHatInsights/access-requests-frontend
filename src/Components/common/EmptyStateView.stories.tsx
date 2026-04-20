@@ -205,9 +205,9 @@ export const CustomerViewNoRequests: Story = {
 
 export const PermissionError: Story = {
   args: {
-    title: 'Invalid Account number',
+    title: 'Invalid Organization ID',
     description:
-      'The account number provided is not valid or you do not have permission to access it.',
+      'The organization ID provided is not valid or you do not have permission to access it.',
     variant: 'lg',
     headingLevel: 'h2',
   },

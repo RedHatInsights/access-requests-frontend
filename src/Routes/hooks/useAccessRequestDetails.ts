@@ -17,7 +17,6 @@ interface AccessRequestRole {
 
 interface AccessRequest {
   request_id: string;
-  target_account: string;
   target_org: string;
   first_name: string;
   last_name: string;
@@ -99,7 +98,7 @@ export const useAccessRequestDetails = ({
   const requestDisplayProps = React.useMemo(
     () => [
       ...(isInternal
-        ? ['request_id', 'target_account', 'target_org']
+        ? ['request_id', 'target_org']
         : ['first_name', 'last_name']),
       'start_date',
       'end_date',

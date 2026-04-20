@@ -1,12 +1,6 @@
 import React from 'react';
 import apiInstance from '../../../Helpers/apiInstance';
-import {
-  ACCESS_FROM,
-  ACCESS_TO,
-  ACCOUNT_NUMBER,
-  ORG_ID,
-  SELECTED_ROLES,
-} from '../schema';
+import { ACCESS_FROM, ACCESS_TO, ORG_ID, SELECTED_ROLES } from '../schema';
 import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
 import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 
@@ -22,7 +16,6 @@ interface User {
 }
 
 interface RequestDetails {
-  target_account: string;
   target_org: string;
   start_date: string;
   end_date: string;
@@ -38,7 +31,6 @@ interface ErrorState {
 }
 
 interface FormValues {
-  [ACCOUNT_NUMBER]: string;
   [ORG_ID]: string;
   [ACCESS_FROM]: string;
   [ACCESS_TO]: string;
@@ -67,8 +59,6 @@ interface UseAccessRequestWizardReturn {
   onCloseCancelWarning: () => void;
   clearError: () => void;
 }
-
-const invalidAccountTitle = 'Invalid Account number';
 
 export const useAccessRequestWizard = ({
   requestId,
@@ -127,9 +117,8 @@ export const useAccessRequestWizard = ({
             );
           }
 
-          if (requestDetails.target_account) {
+          if (requestDetails.target_org) {
             setInitialValues({
-              [ACCOUNT_NUMBER]: requestDetails.target_account,
               [ORG_ID]: requestDetails.target_org,
               [ACCESS_FROM]: requestDetails.start_date,
               [ACCESS_TO]: requestDetails.end_date,
@@ -159,7 +148,6 @@ export const useAccessRequestWizard = ({
       setIsSubmitting(true);
 
       const body = {
-        target_account: values[ACCOUNT_NUMBER],
         start_date: values[ACCESS_FROM],
         end_date: values[ACCESS_TO],
         target_org: values[ORG_ID],
@@ -206,17 +194,9 @@ export const useAccessRequestWizard = ({
           const errorMessage =
             errors[0]?.message || errors[0]?.detail || err.message;
 
-          const isInvalidAccount = /Account .* does not exist/.test(
-            errorMessage
-          );
-
           setError({
-            title: isInvalidAccount
-              ? invalidAccountTitle
-              : `Could not ${variant} access request`,
-            description: isInvalidAccount
-              ? 'Please return to Step 1: Request details and input a new account number for your request.'
-              : errorMessage,
+            title: `Could not ${variant} access request`,
+            description: errorMessage,
           });
 
           setIsSubmitting(false);

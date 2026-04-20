@@ -25,7 +25,6 @@ import AccessDuration from './AccessDuration';
 import SetName from './SetName';
 import schemaBuilder from './schema';
 import { useAccessRequestWizard } from './hooks/useAccessRequestWizard';
-const invalidAccountTitle = 'Invalid Account number';
 
 const FormTemplate = (props: Record<string, unknown>) => (
   <Pf4FormTemplate {...props} showFormControls={false} />
@@ -90,8 +89,6 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
 
   // Validator mapper for form validation
   const validatorMapper = {
-    'validate-account': () => (value: string) =>
-      value && !error ? undefined : 'Please enter a valid account number',
     'validate-org-id': () => (value: string) =>
       value && !error ? undefined : 'Please enter a valid organization ID',
     'validate-duration': () => (value: string[]) => value?.length > 0,
@@ -154,11 +151,9 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
                       titleText={error?.title || 'An error occurred'}
                     >
                       <EmptyStateBody>{error?.description}</EmptyStateBody>
-                      {error?.title !== invalidAccountTitle && (
-                        <Button variant="primary" onClick={clearError}>
-                          Return to Step 1
-                        </Button>
-                      )}
+                      <Button variant="primary" onClick={clearError}>
+                        Return to Step 1
+                      </Button>
                     </EmptyState>
                   </>
                 )}
