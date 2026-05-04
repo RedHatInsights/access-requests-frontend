@@ -1,8 +1,6 @@
 import React from 'react';
 import { useAddNotification } from '@redhat-cloud-services/frontend-components-notifications/hooks';
 import apiInstance from '../../Helpers/apiInstance';
-import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
-import useUserData from '../../Hooks/useUserData';
 
 // Global variable declaration
 declare const API_BASE: string;
@@ -63,10 +61,6 @@ export const useAccessRequestsData = ({
   const [error, setError] = React.useState<string | null>(null);
   const addNotification = useAddNotification();
 
-  // Chrome and user data for permission checking
-  const { isOrgAdmin } = useUserData();
-  const { getBundleData } = useChrome();
-
   const fetchAccessRequests = React.useCallback(() => {
     setIsLoading(true);
     setError(null);
@@ -75,16 +69,11 @@ export const useAccessRequestsData = ({
       `${window.location.origin}${API_BASE}/cross-account-requests/`
     );
 
-    // Determine query type based on user permissions and context
-    if (isInternal) {
-      if (getBundleData()?.bundleId === 'iam' && isOrgAdmin) {
-        listUrl.searchParams.append('query_by', 'target_org');
-      } else {
-        listUrl.searchParams.append('query_by', 'user_id');
-      }
-    } else {
-      listUrl.searchParams.append('query_by', 'target_org');
-    }
+    // Determine query type based on user context
+    listUrl.searchParams.append(
+      'query_by',
+      isInternal ? 'user_id' : 'target_org'
+    );
 
     // Pagination parameters
     listUrl.searchParams.append('offset', String((page - 1) * perPage));
@@ -162,8 +151,6 @@ export const useAccessRequestsData = ({
     orgIdFilter,
     statusSelections,
     columns,
-    isOrgAdmin,
-    getBundleData,
     addNotification,
   ]);
 
