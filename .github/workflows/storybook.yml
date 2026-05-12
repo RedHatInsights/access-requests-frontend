@@ -58,3 +58,4 @@ jobs:
           npm run test-storybook -- --url http://localhost:6006
         env:
           CI: true
+          STORYBOOK_CONTRAST_SCREENSHOTS: "false"

@@ -18,6 +18,18 @@ Stories are automatically deployed on:
 - ✅ Pull requests from [@RedHatInsights/experience-ui-committers](https://github.com/orgs/RedHatInsights/teams/experience-ui-committers) team members
 - ✅ Pull requests from RedHatInsights organization admins
 
+### Accessibility Testing
+
+Run Storybook tests with accessibility checks (automatically checks color contrast in both light and dark mode):
+
+- `npm run test-storybook`
+
+To capture screenshots on contrast failures:
+
+- `STORYBOOK_CONTRAST_SCREENSHOTS=true npm run test-storybook`
+
+Screenshots are saved to `storybook-a11y-screenshots/` by default.
+
 ## Developing
 
 1. `npm install`
