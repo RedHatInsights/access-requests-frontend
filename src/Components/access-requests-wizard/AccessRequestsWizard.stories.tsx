@@ -274,7 +274,7 @@ export const LoadingState: Story = {
         // Simulate slow user API response
         http.get(
           '/api/rbac/v1/cross-account-requests/:requestId/',
-          async (params) => {
+          async ({ params }) => {
             await new Promise((resolve) => setTimeout(resolve, 500));
             return HttpResponse.json({
               request_id: params.requestId,
@@ -294,7 +294,7 @@ export const LoadingState: Story = {
     onClose: () => console.log('Wizard closed'),
   },
   play: async () => {
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(await screen.findByRole('progressbar')).toBeInTheDocument();
     await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'));
   },
 };
