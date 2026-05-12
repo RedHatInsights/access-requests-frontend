@@ -106,10 +106,10 @@ const MockPagination: React.FC<{ id: string }> = ({ id }) => (
   <div
     style={{
       padding: '8px 16px',
-      border: '1px dashed #ccc',
+      border: '1px dashed var(--pf-t--global--border--color--default)',
       borderRadius: '4px',
       fontSize: '14px',
-      color: '#666',
+      color: 'var(--pf-t--global--text--color--regular)',
     }}
   >
     Pagination ({id})
