@@ -4,13 +4,11 @@ import '@patternfly/patternfly/patternfly-addons.css';
 import React from 'react';
 import { Provider } from 'react-redux';
 import registry, { RegistryContext } from '../src/store';
-import { type ChromeConfig, ChromeProvider, type FeatureFlagsConfig, FeatureFlagsProvider } from './providers';
-// Import MSW
+import { FeatureFlagsProvider, StorybookMockProvider } from '@redhat-cloud-services/hcc-storybook-hub';
 import { initialize, mswLoader } from 'msw-storybook-addon';
 import { MemoryRouter } from 'react-router-dom';
 import NotificationsProvider from '@redhat-cloud-services/frontend-components-notifications/NotificationsProvider';
 
-// Initialize MSW
 initialize();
 
 const preview: Preview = {
@@ -22,7 +20,6 @@ const preview: Preview = {
         date: /Date$/i
       }
     },
-    // Default configurations for all stories (can be overridden per story)
     permissions: {
       userAccessAdministrator: false,
       orgAdmin: false
@@ -36,31 +33,27 @@ const preview: Preview = {
     mockingDate: new Date(2024, 3, 12)
   },
   decorators: [
-    // 👇 Combined context decorator - reads from story parameters and args
     (Story, { parameters, args }) => {
-      const chromeConfig: ChromeConfig = {
-        environment: 'prod',
-        ...parameters.chrome,
-        // Override with args if provided (for interactive controls)
-        ...(args.environment !== undefined && { environment: args.environment })
-      };
+      const environment = args.environment ?? parameters.chrome?.environment ?? 'prod';
 
-      const featureFlags: FeatureFlagsConfig = {
+      const featureFlags: Record<string, boolean> = {
         'platform.rbac.itless': false,
         ...parameters.featureFlags,
-        // Override with args if provided (for interactive controls)
         ...(args['platform.rbac.itless'] !== undefined && { 'platform.rbac.itless': args['platform.rbac.itless'] })
       };
 
-      // Mock global API_BASE for Storybook environment
       if (typeof window !== 'undefined') {
         (window as any).API_BASE = '/api/rbac/v1';
       }
 
       return (
-        <MemoryRouter>
-          <ChromeProvider value={chromeConfig}>
-            <FeatureFlagsProvider value={featureFlags}>
+        <StorybookMockProvider
+          environment={environment === 'prod' ? 'production' : 'staging'}
+          isOrgAdmin={args.orgAdmin ?? parameters.permissions?.orgAdmin ?? false}
+          permissions={['rbac:*:*']}
+        >
+          <FeatureFlagsProvider value={featureFlags}>
+            <MemoryRouter>
               <RegistryContext.Provider value={{ getRegistry: () => registry }}>
                 <Provider store={registry.getStore()}>
                   <NotificationsProvider>
@@ -68,9 +61,9 @@ const preview: Preview = {
                   </NotificationsProvider>
                 </Provider>
               </RegistryContext.Provider>
-            </FeatureFlagsProvider>
-          </ChromeProvider>
-        </MemoryRouter>
+            </MemoryRouter>
+          </FeatureFlagsProvider>
+        </StorybookMockProvider>
       );
     }
   ],
