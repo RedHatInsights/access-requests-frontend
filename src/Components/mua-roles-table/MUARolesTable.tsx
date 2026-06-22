@@ -450,7 +450,7 @@ const MUARolesTable: React.FC<MUARolesTableProps> = ({
   const selectionProps = useMUATableRolesSelection({
     selectedRoles: normalizedSelectedRoles,
     setSelectedRoles: setSelectedRoles,
-    sortedRows,
+    sortedRows: pagedRows,
   });
 
   // Row expansion
