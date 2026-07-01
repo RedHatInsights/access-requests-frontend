@@ -43,8 +43,6 @@ spec:
       set -ex
 
       npm install
-      # Install Playwright browsers
-      npx playwright install chromium
   - name: unit-tests-script
     value: |
       #!/bin/bash
