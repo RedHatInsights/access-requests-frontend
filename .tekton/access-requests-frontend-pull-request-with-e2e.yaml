@@ -15,7 +15,7 @@ metadata:
     appstudio.openshift.io/application: access-requests-frontend
     appstudio.openshift.io/component: access-requests-frontend
     pipelines.appstudio.openshift.io/type: build
-  name: access-requests-frontend-on-pull-request
+  name: access-requests-frontend-on-pull-request-with-e2e
   namespace: rh-platform-experien-tenant
 spec:
   params:
