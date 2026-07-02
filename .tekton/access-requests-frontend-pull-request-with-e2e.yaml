@@ -117,6 +117,23 @@ spec:
           - ip: "127.0.0.1"
             hostnames:
               - "stage.foo.redhat.com"
+      stepSpecs:
+        - name: run-application
+          computeResources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+        - name: frontend-dev-proxy
+          computeResources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
   workspaces:
   - name: workspace
     volumeClaimTemplate:
