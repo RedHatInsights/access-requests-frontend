@@ -52,12 +52,10 @@ spec:
       npm test -- --runInBand --no-cache
   - name: run-app-script
     value: |
-      #!/bin/sh
-      # Script that runs the test application with Caddy using ConfigMap-mounted Caddyfile
+      #!/bin/bash
+      set -ex
 
-      set -e
-
-      echo "Starting application with Caddy using ConfigMap Caddyfile..."
+      echo "Starting application with Caddy using Caddyfile from image..."
       exec caddy run --config /etc/caddy/Caddyfile
   - name: e2e-tests-script
     value: |
