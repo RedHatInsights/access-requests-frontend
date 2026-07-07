@@ -152,7 +152,8 @@ const TEST_DATA = {
 } as const;
 
 // Disable storage state - we manage auth manually
-test.use({ storageState: undefined });
+// Note: We use the storageState from global-setup (internal-user.json)
+// The internal-user-fixture loads this automatically
 
 //=============================================================================
 // JWT Helper Function

@@ -78,9 +78,11 @@ function decodeJWT(token: string): any {
 export const test = base.extend<InternalUserFixtures>({
   internalUserContext: async ({ browser }, use) => {
     // Create a new browser context with chrome.auth override
+    // IMPORTANT: Load the storageState from global-setup to get the authenticated session
     const context = await browser.newContext({
       baseURL: process.env.BASE_URL || 'https://console.stage.redhat.com',
       ignoreHTTPSErrors: true,
+      storageState: 'playwright/.auth/internal-user.json', // Load authenticated state
     });
 
     // Install chrome.auth.getUser() override BEFORE any page loads
