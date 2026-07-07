@@ -117,8 +117,8 @@ spec:
           - ip: "127.0.0.1"
             hostnames:
               - "stage.foo.redhat.com"
-      stepSpecs:
-        - name: run-application
+      sidecarSpecs:
+        - sidecarName: run-application
           computeResources:
             requests:
               cpu: "500m"
@@ -126,7 +126,7 @@ spec:
             limits:
               cpu: "1000m"
               memory: "1Gi"
-        - name: frontend-dev-proxy
+        - sidecarName: frontend-dev-proxy
           computeResources:
             requests:
               cpu: "500m"
