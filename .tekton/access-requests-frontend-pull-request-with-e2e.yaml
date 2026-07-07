@@ -118,7 +118,7 @@ spec:
             hostnames:
               - "stage.foo.redhat.com"
       sidecarSpecs:
-        - sidecarName: run-application
+        - name: run-application
           computeResources:
             requests:
               cpu: "500m"
@@ -126,7 +126,7 @@ spec:
             limits:
               cpu: "1000m"
               memory: "1Gi"
-        - sidecarName: frontend-dev-proxy
+        - name: frontend-dev-proxy
           computeResources:
             requests:
               cpu: "500m"
