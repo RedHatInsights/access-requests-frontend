@@ -1,46 +1,29 @@
 /// <reference path="../types/window.d.ts" />
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/internal-user-fixture';
 import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
 
 /**
- * TAM Invite E2E Test - Hybrid Authentication Approach
- *
- * ⚠️  CRITICAL: DO NOT REMOVE THE TOKEN SWAPPING AND CHROME.AUTH OVERRIDE LOGIC! ⚠️
+ * TAM Invite E2E Test
  *
  * Tests the complete TAM (Technical Account Manager) invite workflow including:
  * - Button visibility with is_internal: true (ONLY visible to internal users)
  * - Form submission (3-step wizard)
  * - Request verification in table
  *
- * WHY THIS TEST REQUIRES SPECIAL HANDLING:
- * ========================================
+ * WHY THIS TEST USES THE INTERNAL USER FIXTURE:
+ * ==============================================
  * The TAM invite feature is INTERNAL-USER-ONLY. Without is_internal: true:
  * - The "Create request" button does not appear
  * - Backend TAM APIs reject the requests
  * - The entire workflow is inaccessible
  *
- * THE PROBLEM:
- * ============
- * - JWT tokens from SSO login have is_internal: FALSE in claims (even for internal users)
- * - The 3scale API gateway injects is_internal: TRUE in API responses
- * - BUT the frontend reads chrome.auth.getUser() which reads JWT claims directly
- * - React components cache the user object BEFORE API calls complete
+ * The `internalUserPage` fixture from internal-user-fixture.ts:
+ * - Creates a browser context with chrome.auth.getUser() override
+ * - Swaps the OIDC token to set profile.is_internal: true
+ * - Ensures the TAM workflow is accessible
  *
- * THE SOLUTION (DO NOT REMOVE):
- * ==============================
- * 1. Get authenticated token from global-setup (already has valid session)
- * 2. Create NEW browser context with createChromeAuthOverride() installed
- * 3. Swap OIDC token and set profile.is_internal: true in the override
- * 4. This ensures chrome.auth.getUser() returns is_internal: true when components mount
- *
- * Authentication Strategy:
- * 1. Global-setup performs SSO login with E2E_USER/E2E_PASSWORD
- * 2. This test gets the token from localStorage (set by global-setup)
- * 3. Override chrome.auth.getUser() to return is_internal: true
- * 4. Test the TAM workflow which is now accessible
- *
- * See E2E_TESTING_README.md for more details on why this cannot be simplified.
+ * See playwright/fixtures/internal-user-fixture.ts for implementation details.
  */
 
 //=============================================================================
@@ -234,129 +217,21 @@ function createChromeAuthOverride() {
 //=============================================================================
 
 test.describe('TAM Invite - E2E Workflow', () => {
-  test('should complete TAM invite workflow with is_internal override', async ({ browser }) => {
+  test('should complete TAM invite workflow with is_internal override', async ({ internalUserPage: page }) => {
     test.setTimeout(CONFIG.test.timeout);
 
-    //=========================================================================
-    // Setup: Get token from authenticated session (set by global-setup)
-    //=========================================================================
-
-    console.log('📋 Getting token from authenticated session...');
-
-    // The global-setup has already authenticated and saved the token
-    // We just need to read it from localStorage to use in the token swap
-    const vaultToken = await page.evaluate(() => localStorage.getItem('cs_jwt'));
-
-    if (!vaultToken) {
-      throw new Error('cs_jwt token not found - global-setup may have failed');
-    }
-
-    const vaultClaims = decodeJWT(vaultToken);
-
-    console.log(`✓ Token user: ${vaultClaims.username}`);
-    console.log(`✓ Token has idp claim: ${vaultClaims.idp}`);
-
-    //=========================================================================
-    // Setup: Create browser context with overrides
-    //=========================================================================
-
-    const context = await browser.newContext({
-      baseURL: CONFIG.console.url,
-      ignoreHTTPSErrors: true,
-      proxy: { server: CONFIG.proxy.server }
-    });
-
-    const page = await context.newPage();
-
-    // Install chrome.auth.getUser() override BEFORE page loads
-    await page.addInitScript(createChromeAuthOverride());
+    // The internalUserPage fixture has already:
+    // - Created a browser context with chrome.auth override
+    // - Swapped the OIDC token to set is_internal: true
+    // - Verified the session is valid
+    // We can now proceed directly to testing the TAM workflow
 
     try {
       //=======================================================================
-      // Step 1: Navigate to console (already authenticated by global-setup)
+      // Step 1: Verify Identity (is_internal: true)
       //=======================================================================
 
-      console.log('\n🔐 Step 1: Loading console');
-
-      await disableCookiePrompt(page);
-      await page.goto(CONFIG.console.url, {
-        waitUntil: 'domcontentloaded',
-        timeout: TIMEOUTS.PAGE_LOAD
-      });
-
-      // Wait for OIDC initialization
-      await page.waitForTimeout(TIMEOUTS.OIDC_INIT);
-
-      console.log('✓ Console loaded (already authenticated via global-setup)');
-
-      //=======================================================================
-      // Step 2: Swap OIDC Token with is_internal override
-      //
-      // ⚠️  WARNING: DO NOT REMOVE THIS SECTION! ⚠️
-      // This token swap is REQUIRED for TAM invite workflow to work.
-      // Without is_internal: true, the TAM invite button is not visible.
-      // See file header comments for detailed explanation.
-      //=======================================================================
-
-      console.log('\n🔄 Step 2: Applying is_internal override to OIDC session');
-
-      // Find OIDC state in storage
-      const oidcState = await page.evaluate(() => {
-        const key = Object.keys(localStorage).find(k => k.startsWith('oidc.user:'));
-        return key ? { key, storage: 'localStorage' } : null;
-      });
-
-      if (!oidcState) {
-        throw new Error('OIDC state not found in localStorage');
-      }
-
-      console.log(`✓ Found OIDC key: ${oidcState.key}`);
-
-      // Swap to Vault token with is_internal override
-      await page.evaluate(({ oidcKey, vaultToken, vaultClaims }) => {
-        const newOidcUser = {
-          id_token: vaultToken,
-          access_token: vaultToken,
-          token_type: 'Bearer',
-          refresh_token: '',
-          profile: {
-            ...vaultClaims,
-            is_internal: true, // Override: JWT has false, but we need true
-            is_org_admin: vaultClaims.is_org_admin
-          },
-          expires_at: vaultClaims.exp,
-          expires_in: vaultClaims.exp - Math.floor(Date.now() / 1000),
-          expired: false,
-          scopes: (vaultClaims.scope || '').split(' '),
-          session_state: vaultClaims.session_state || null
-        };
-
-        localStorage.setItem(oidcKey, JSON.stringify(newOidcUser));
-        localStorage.setItem('cs_jwt', vaultToken);
-        const expires = new Date(vaultClaims.exp * 1000).toUTCString();
-        document.cookie = `cs_jwt=${vaultToken}; path=/; domain=.stage.redhat.com; secure; expires=${expires}`;
-      }, {
-        oidcKey: oidcState.key,
-        vaultToken,
-        vaultClaims
-      });
-
-      console.log('✓ OIDC session swapped');
-
-      // Reload to activate overrides
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(TIMEOUTS.CHROME_REINIT);
-
-      // Verify session is valid
-      if (page.url().includes(CONFIG.console.ssoUrl)) {
-        throw new Error('Session swap failed - redirected to SSO');
-      }
-
-      //=======================================================================
-      // Step 3: Verify Identity
-      //=======================================================================
-
-      console.log('\n✅ Step 3: Verifying identity');
+      console.log('\n✅ Step 1: Verifying internal user identity');
 
       const identity = await page.request.get(SELECTORS.api.identity).then(r => r.json());
       expect(identity.identity.user.is_internal).toBe(true);
@@ -367,10 +242,10 @@ test.describe('TAM Invite - E2E Workflow', () => {
       console.log(`✓ is_org_admin: ${identity.identity.user.is_org_admin}`);
 
       //=======================================================================
-      // Step 4: Navigate to TAM Invite Page
+      // Step 2: Navigate to TAM Invite Page
       //=======================================================================
 
-      console.log('\n🧭 Step 4: Navigating to TAM invite page');
+      console.log('\n🧭 Step 2: Navigating to TAM invite page');
 
       await page.goto('/iam/my-user-access', {
         waitUntil: 'domcontentloaded',
@@ -395,10 +270,10 @@ test.describe('TAM Invite - E2E Workflow', () => {
       console.log(`✓ Current URL: ${page.url()}`);
 
       //=======================================================================
-      // Step 5: Verify Button and Test Workflow
+      // Step 3: Verify Button and Test Workflow
       //=======================================================================
 
-      console.log('\n🎯 Step 5: Testing TAM invite workflow');
+      console.log('\n🎯 Step 3: Testing TAM invite workflow');
 
       // Verify chrome.auth.getUser() returns is_internal: true
       const chromeUser = await page.evaluate(async () => {
@@ -431,10 +306,10 @@ test.describe('TAM Invite - E2E Workflow', () => {
       await page.screenshot({ path: SCREENSHOTS.step1Initial, fullPage: true });
 
       //=======================================================================
-      // Step 6: Fill Form - Step 1 (Request Details)
+      // Step 4: Fill Form - Step 1 (Request Details)
       //=======================================================================
 
-      console.log('\n📝 Step 6: Filling wizard - Step 1');
+      console.log('\n📝 Step 4: Filling wizard - Step 1');
 
       // Fill Organization ID (required field)
       await modal.locator(SELECTORS.wizard.orgIdInput).first().fill(TEST_DATA.orgId);
@@ -461,10 +336,10 @@ test.describe('TAM Invite - E2E Workflow', () => {
       await page.waitForTimeout(TIMEOUTS.MODAL_TRANSITION);
 
       //=======================================================================
-      // Step 7: Fill Form - Step 2 (Select Roles)
+      // Step 5: Fill Form - Step 2 (Select Roles)
       //=======================================================================
 
-      console.log('\n📝 Step 7: Filling wizard - Step 2');
+      console.log('\n📝 Step 5: Filling wizard - Step 2');
 
       await page.screenshot({ path: SCREENSHOTS.step2Initial, fullPage: true });
 
@@ -482,10 +357,10 @@ test.describe('TAM Invite - E2E Workflow', () => {
       await page.waitForTimeout(TIMEOUTS.MODAL_TRANSITION);
 
       //=======================================================================
-      // Step 8: Review and Submit
+      // Step 6: Review and Submit
       //=======================================================================
 
-      console.log('\n✅ Step 8: Review and submit');
+      console.log('\n✅ Step 6: Review and submit');
 
       await page.screenshot({ path: SCREENSHOTS.step3Review, fullPage: true });
 
@@ -502,10 +377,10 @@ test.describe('TAM Invite - E2E Workflow', () => {
       }
 
       //=======================================================================
-      // Step 9: Verify Request in Table
+      // Step 7: Verify Request in Table
       //=======================================================================
 
-      console.log('\n📋 Step 9: Verifying request appears in table');
+      console.log('\n📋 Step 7: Verifying request appears in table');
 
       await page.waitForTimeout(TIMEOUTS.TABLE_REFRESH);
 
