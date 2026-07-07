@@ -69,6 +69,7 @@ const TIMEOUTS = {
   FEDERATED_MODULE: 10_000,
   FORM_SUBMIT: 3_000,
   TABLE_REFRESH: 2_000,
+  TABLE_SEARCH: 5_000,
 
   // Chrome override polling
   OVERRIDE_POLL_INTERVAL: 50,
@@ -303,7 +304,7 @@ test.describe('TAM Invite - E2E Workflow', () => {
 
       // Strategy 1: Look for the org ID in the table
       const orgIdCell = page.locator(`td:has-text("${TEST_DATA.orgId}"), [role="cell"]:has-text("${TEST_DATA.orgId}")`).first();
-      if (await orgIdCell.isVisible({ timeout: 5000 }).catch(() => false)) {
+      if (await orgIdCell.isVisible({ timeout: TIMEOUTS.TABLE_SEARCH }).catch(() => false)) {
         requestFound = true;
 
         // Get the full row to check status

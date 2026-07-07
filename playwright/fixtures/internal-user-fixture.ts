@@ -10,6 +10,7 @@ const SSO_CONFIG = {
   console: {
     url: process.env.BASE_URL || 'https://console.stage.redhat.com',
     ssoUrl: 'sso.stage.redhat.com',
+    cookieDomain: '.stage.redhat.com',
   },
   proxy: process.env.CI ? undefined : { server: 'http://squid.corp.redhat.com:3128' },
   timeouts: {
@@ -18,6 +19,8 @@ const SSO_CONFIG = {
     ssoStage: 15_000,
     oidcInit: 2_000,
     chromeReinit: 5_000,
+    modalVisibility: 2_000,
+    modalDismiss: 1_000,
   },
 } as const;
 
@@ -189,9 +192,9 @@ export const test = base.extend<InternalUserFixtures>({
 
     // Handle email linking modal if it appears
     const modalNextButton = page.locator('button:has-text("Next")').first();
-    if (await modalNextButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await modalNextButton.isVisible({ timeout: SSO_CONFIG.timeouts.modalVisibility }).catch(() => false)) {
       await modalNextButton.click();
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(SSO_CONFIG.timeouts.modalDismiss);
     }
 
     await page.waitForSelector(SSO_SELECTORS.passwordInput, { state: 'visible' });
@@ -263,7 +266,7 @@ export const test = base.extend<InternalUserFixtures>({
     const claims = decodeJWT(token);
 
     // Swap to our version with is_internal: true override
-    await page.evaluate(({ oidcKey, token, claims }) => {
+    await page.evaluate(({ oidcKey, token, claims, cookieDomain }) => {
       const newOidcUser = {
         id_token: token,
         access_token: token,
@@ -284,11 +287,12 @@ export const test = base.extend<InternalUserFixtures>({
       localStorage.setItem(oidcKey, JSON.stringify(newOidcUser));
       localStorage.setItem('cs_jwt', token);
       const expires = new Date(claims.exp * 1000).toUTCString();
-      document.cookie = `cs_jwt=${token}; path=/; domain=.stage.redhat.com; secure; expires=${expires}`;
+      document.cookie = `cs_jwt=${token}; path=/; domain=${cookieDomain}; secure; expires=${expires}`;
     }, {
       oidcKey: oidcState.key,
       token,
-      claims
+      claims,
+      cookieDomain: SSO_CONFIG.console.cookieDomain
     });
 
     // Reload to activate overrides (Storage.prototype.getItem will maintain is_internal: true)
