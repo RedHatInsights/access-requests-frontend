@@ -11,16 +11,16 @@ The E2E tests use **environment variable-based authentication** instead of Vault
 - The token is set as a cookie with specific domain/path configuration
 - OIDC state is injected into sessionStorage for react-oidc-context
 
-### TAM Invite Test - Internal User Requirement (CRITICAL)
+### Internal User Fixture - For Testing Internal-Only Features (CRITICAL)
 
-**DO NOT REMOVE THE TOKEN SWAPPING LOGIC FROM TAM INVITE TEST!**
+**DO NOT REMOVE THE INTERNAL-USER-FIXTURE!**
 
-The TAM (Technical Account Manager) invite workflow **requires** `is_internal: true` to work:
+The TAM (Technical Account Manager) invite workflow and other internal-only features **require** `is_internal: true` to work:
 
-1. **Why TAM needs internal user:**
-   - The "Create request" button for TAM invites is only visible to internal Red Hat users
-   - The backend TAM invite API endpoints check `is_internal: true`
-   - Without this flag, the entire TAM workflow is inaccessible
+1. **Why Internal User Access is Needed:**
+   - Features like "Create TAM request" are only visible to internal Red Hat users
+   - Backend APIs check `is_internal: true` and reject requests without it
+   - Without this flag, entire workflows are inaccessible in tests
 
 2. **The Problem:**
    - JWT tokens from SSO login have `is_internal: false` in claims (even for internal users)
@@ -28,20 +28,32 @@ The TAM (Technical Account Manager) invite workflow **requires** `is_internal: t
    - BUT the frontend reads `chrome.auth.getUser()` which reads JWT claims directly
    - React components cache this user object before API calls complete
 
-3. **The Solution - Token Swap + Override:**
-   - The test gets the authenticated token from global-setup
-   - Creates a fresh browser context with `createChromeAuthOverride()` installed
-   - Swaps the OIDC token and sets `profile.is_internal: true` in the override
-   - This ensures `chrome.auth.getUser()` returns `is_internal: true` when components mount
+3. **The Solution - Internal User Fixture:**
+   - Use `playwright/fixtures/internal-user-fixture.ts` for tests needing internal access
+   - The fixture creates a browser context with `chrome.auth.getUser()` override
+   - Gets authenticated token from global-setup and swaps the OIDC token
+   - Sets `profile.is_internal: true` in the override
+   - Returns an `internalUserPage` ready to test internal-only features
 
-4. **Why We Can't Simplify:**
-   - Removing the token swap breaks the TAM workflow (button won't appear)
-   - The test MUST create a new browser context (can't use global-setup's session)
+4. **Usage:**
+   ```typescript
+   import { test, expect } from '../fixtures/internal-user-fixture';
+   
+   test('my internal feature test', async ({ internalUserPage }) => {
+     await internalUserPage.goto('/iam/my-user-access');
+     // Internal-only buttons and features are now visible!
+   });
+   ```
+
+5. **Why This Can't Be Removed:**
+   - The token swap is essential for internal-only features to work
+   - A fresh browser context is required (can't use global-setup's session)
    - The chrome.auth override MUST be installed before page loads
-   - This is not "legacy code" - it's essential for testing internal-only features
+   - This is not "legacy code" - it's a necessary workaround for JWT/API mismatch
 
-**File:** `playwright/e2e/tam-invite-hybrid.spec.ts`
-**Key Functions:** `createChromeAuthOverride()`, token swap logic around line 320-365
+**Files:**
+- `playwright/fixtures/internal-user-fixture.ts` - The reusable fixture (195 lines)
+- `playwright/e2e/tam-invite-hybrid.spec.ts` - Example usage
 
 ### Key Implementation Details
 

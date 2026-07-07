@@ -10,23 +10,36 @@ The tests authenticate using **E2E_USER and E2E_PASSWORD** environment variables
 
 This approach eliminates the VPN requirement and works in both local and CI environments.
 
-### TAM Invite Test - Special Requirements ⚠️
+### Testing Internal-Only Features ⚠️
 
-**The TAM invite test requires special handling and CANNOT be simplified like other tests.**
+**Use the Internal User Fixture for Internal-Only Features**
 
-The TAM (Technical Account Manager) invite feature is **internal-user-only**:
+Some features like TAM (Technical Account Manager) invites are **internal-user-only**:
 - The "Create request" button only appears when `is_internal: true`
 - Backend APIs reject requests without this flag
 - JWT tokens from SSO have `is_internal: false` even for internal users
 
-**The Solution:**
-The `tam-invite-hybrid.spec.ts` test performs **token swapping with chrome.auth override**:
-1. Gets authenticated token from global-setup
-2. Creates new browser context with `createChromeAuthOverride()` installed
-3. Swaps OIDC token and sets `profile.is_internal: true` in the override
-4. This ensures `chrome.auth.getUser()` returns the correct flag when React components mount
+**The Solution - Reusable Fixture:**
 
-**Important:** Do NOT remove the token swapping logic - it's essential for testing internal-only features. The test file has detailed comments explaining why each step is necessary.
+Use `playwright/fixtures/internal-user-fixture.ts` for tests needing internal access:
+
+```typescript
+import { test, expect } from '../fixtures/internal-user-fixture';
+
+test('my internal feature test', async ({ internalUserPage }) => {
+  // internalUserPage has is_internal: true already set
+  await internalUserPage.goto('/iam/my-user-access');
+  // TAM invite button is now visible!
+});
+```
+
+**What the Fixture Does:**
+1. Creates browser context with `chrome.auth.getUser()` override
+2. Gets authenticated token from global-setup
+3. Swaps OIDC token and sets `profile.is_internal: true`
+4. Returns a page ready to test internal-only features
+
+**Important:** Do NOT remove this fixture - it's essential for testing internal-only features. See the fixture file for detailed technical explanation.
 
 ## Quick Links
 
