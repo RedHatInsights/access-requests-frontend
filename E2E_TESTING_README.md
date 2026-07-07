@@ -1,6 +1,14 @@
 # E2E Testing for Access Requests Frontend
 
-Complete E2E testing infrastructure copied from the 3scale-interaction investigation project.
+E2E testing infrastructure using Playwright with environment variable-based authentication (adapted from the 3scale-interaction proof of concept).
+
+## Authentication Approach
+
+The tests authenticate using **E2E_USER and E2E_PASSWORD** environment variables instead of Vault:
+- **Locally**: Set environment variables manually
+- **CI**: Provided by ExternalSecret (Konflux pipeline)
+
+This approach eliminates the VPN requirement and works in both local and CI environments.
 
 ## Quick Links
 
@@ -15,10 +23,9 @@ playwright/
 ├── e2e/
 │   ├── tam-invite-hybrid.spec.ts    # TAM invite E2E test (9 steps)
 │   └── internal-user.spec.ts        # Internal user validation
-├── setup/global-setup.ts            # Vault authentication
-├── fixtures/auth-fixture.ts          # Auth fixture
+├── setup/global-setup.ts            # Environment variable authentication
+├── fixtures/auth-fixture.ts          # Auth fixture (restores sessionStorage)
 ├── types/window.d.ts                # TypeScript definitions
-├── vault-client.ts                  # Vault integration (node-vault)
 └── tsconfig.json                    # Playwright TypeScript config
 ```
 
@@ -35,9 +42,7 @@ bin/
 
 ### Dependencies (added to package.json)
 - `@playwright/test: ^1.40.0`
-- `@redhat-cloud-services/playwright-test-auth: ^0.0.2`
 - `@types/node: ^20.10.0`
-- `node-vault: ^0.12.0`
 
 ## Quick Start
 
@@ -47,15 +52,18 @@ bin/
 # 1. Install dependencies
 npm install
 
-# 2. Run the test (auto-authenticates with Vault)
-bash bin/run_tam_invite_test.sh
+# 2. Set environment variables (get credentials from your team)
+export E2E_USER=your-username
+export E2E_PASSWORD=your-password
+
+# 3. Run the tests
+npx playwright test
 ```
 
-The script will:
-- Check for Vault CLI
-- Authenticate with Vault (opens browser for SSO)
-- Run the test with visible browser
-- Show green ✓ or red ✗ result
+**Important for Local Development:**
+- Tests require the Red Hat VPN and proxy (`http://squid.corp.redhat.com:3128`)
+- The proxy is automatically configured for local runs (when `CI` env var is not set)
+- In CI, the proxy is disabled and not needed
 
 ### CI/CD Integration
 
@@ -68,25 +76,41 @@ Required steps:
 
 ## How It Works
 
-The test uses a **hybrid authentication approach** to achieve `is_internal: true`:
+The test uses a **real SSO login flow** to achieve `is_internal: true`:
 
-1. **Real SSO Login** - Creates valid OIDC session
-2. **Token Swap** - Replaces token with Vault internal user token
-3. **chrome.auth.getUser() Override** - Forces `is_internal: true` before React mounts
+1. **SSO Login** - Authenticates via Red Hat SSO using E2E_USER/E2E_PASSWORD
+2. **Kerberos Auth** - Handles internal SSO page for employee authentication
+3. **Token Extraction** - Extracts JWT token from authenticated session
+4. **OIDC State Injection** - Sets up react-oidc-context state in sessionStorage
+5. **Cookie Setup** - Sets `cs_jwt` cookie with proper domain/path for API access
 
-### Test Flow (9 Steps)
+### Global Setup Flow
 
-1. Vault Authentication
-2. SSO Login (two-stage)
-3. OIDC Token Swap
-4. Identity Verification (`is_internal: true`, `is_org_admin: true`)
-5. Navigate to TAM invite page
-6. Fill Form Step 1 (org ID + dates)
-7. Fill Form Step 2 (select roles)
-8. Review & Submit
-9. Verify in table
+The `global-setup.ts` performs these steps once before all tests:
 
-Duration: ~45 seconds
+1. Navigate to Red Hat SSO login page
+2. Fill username and handle email modal
+3. Fill password and submit
+4. Handle internal Kerberos SSO page (fills same credentials)
+5. Extract `cs_jwt` token from OAuth callback
+6. Create new browser context with token preset
+7. Inject OIDC state into localStorage and sessionStorage
+8. Verify authentication via identity API
+9. Save authenticated state to `.auth/internal-user.json` and `.auth/internal-user-session.json`
+
+### Screenshots for Debugging
+
+The global-setup captures screenshots at each step:
+- `setup-01-login-page.png` - Initial login page
+- `setup-02b-after-modal.png` - After email modal dismissed
+- `setup-03-before-submit.png` - Before password submit
+- `setup-04-after-submit.png` - After initial submit
+- `setup-05-kerberos-filled.png` - Kerberos credentials filled
+- `setup-06-after-kerberos-submit.png` - After Kerberos submit
+- `setup-07-after-oauth-callback.png` - OAuth callback processed
+- `setup-error-final.png` - On any error
+
+Duration: ~30-45 seconds for initial setup, then cached for subsequent runs
 
 ## Adaptation Needed
 

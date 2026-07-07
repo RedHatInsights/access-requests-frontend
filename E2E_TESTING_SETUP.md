@@ -1,6 +1,6 @@
 # E2E Testing Setup for Access Requests Frontend
 
-This document describes the E2E test infrastructure that has been copied from the 3scale-interaction investigation repository.
+This document describes the E2E test infrastructure adapted from the 3scale-interaction proof of concept, now using environment variable-based authentication.
 
 ## Files Copied
 
@@ -12,12 +12,11 @@ playwright/
 │   ├── tam-invite-hybrid.spec.ts    # Main TAM invite E2E test
 │   └── internal-user.spec.ts        # Internal user permission validation test
 ├── setup/
-│   └── global-setup.ts              # Global setup for authentication
+│   └── global-setup.ts              # Global setup - performs real SSO login
 ├── fixtures/
-│   └── auth-fixture.ts              # Authentication fixture
+│   └── auth-fixture.ts              # Restores sessionStorage for tests
 ├── types/
 │   └── window.d.ts                  # TypeScript definitions for window.insights
-├── vault-client.ts                  # Vault integration module
 └── tsconfig.json                    # Playwright TypeScript config
 ```
 
@@ -34,9 +33,9 @@ bin/
 
 Added to `package.json` devDependencies:
 - `@playwright/test: ^1.40.0`
-- `@redhat-cloud-services/playwright-test-auth: ^0.0.2`
 - `@types/node: ^20.10.0`
-- `node-vault: ^0.12.0`
+
+**Note**: Vault dependencies (`node-vault`) have been removed in favor of environment variable authentication.
 
 ## What May Need Adaptation
 
@@ -118,13 +117,87 @@ const SELECTORS = {
 }
 ```
 
+## Authentication Implementation
+
+### Environment Variable Approach
+
+The tests use `E2E_USER` and `E2E_PASSWORD` environment variables instead of Vault:
+
+**Local Development:**
+```bash
+export E2E_USER=your-redhat-username
+export E2E_PASSWORD=your-password
+npx playwright test
+```
+
+**CI/CD:**
+- Credentials provided by Konflux ExternalSecret
+- No VPN or Vault access required
+
+### How Global Setup Works
+
+The `playwright/setup/global-setup.ts` performs these steps:
+
+1. **SSO Login Flow**:
+   - Navigate to Red Hat SSO OAuth endpoint
+   - Fill username → handle email modal → fill password
+   - Handle internal Kerberos SSO page (uses same credentials)
+   - Wait for OAuth callback redirect
+
+2. **Token Extraction**:
+   - Extract `cs_jwt` cookie from authenticated session
+   - Close login context
+
+3. **Auth Context Setup** (Critical order):
+   - Create NEW browser context
+   - Set cookie with `domain: '.stage.redhat.com', path: '/'` BEFORE navigation
+   - Navigate to console with cookie already set
+   - This ensures cookie is available for ALL API calls
+
+4. **OIDC State Injection**:
+   - Decode JWT token to get claims
+   - Inject token into localStorage
+   - Create OIDC user object in sessionStorage
+   - Save sessionStorage separately (Playwright only saves localStorage/cookies)
+
+5. **Verification**:
+   - Call identity API to verify `is_internal: true`
+   - Save authenticated state to `.auth/internal-user.json` and `-session.json`
+
+### Key Implementation Notes
+
+**Cookie Configuration** (playwright/setup/global-setup.ts:194-203):
+```javascript
+await context.addCookies([{
+  name: 'cs_jwt',
+  value: token,
+  domain: '.stage.redhat.com',  // Leading dot for all subdomains
+  path: '/',                      // Must be / not specific paths
+  httpOnly: false,
+  secure: true,
+  sameSite: 'None'
+}]);
+```
+
+**Proxy Configuration** (playwright.config.ts and global-setup.ts):
+- Local: Uses `http://squid.corp.redhat.com:3128`
+- CI: No proxy (auto-detected via `CI` env var)
+
+**SessionStorage Persistence** (playwright/setup/global-setup.ts:289-292):
+- Manually captured and saved to `.auth/internal-user-session.json`
+- Restored by `auth-fixture.ts` before each test
+
 ## Running the Tests
 
 ### Prerequisites
 
-1. **VPN Connection**: Must be on Red Hat VPN
-2. **Vault CLI**: Install with `brew install vault`
-3. **Vault Access**: Must have access to `insights/secrets/qe/stage/users/idp_internal_user`
+1. **Local Development**:
+   - Red Hat VPN connection required
+   - E2E credentials (E2E_USER and E2E_PASSWORD)
+
+2. **CI/CD**:
+   - No VPN required
+   - Credentials from ExternalSecret
 
 ### Quick Start
 

@@ -26,3 +26,8 @@ TODO
 
 *storybook.log
 storybook-static
+
+# Playwright
+playwright-report/
+playwright/.auth/
+playwright/test-results/

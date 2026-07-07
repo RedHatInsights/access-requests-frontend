@@ -75,7 +75,12 @@ test.describe('Internal User Permissions', () => {
       };
     });
 
-    expect(tokenClaims.aud).toBe('cloud-services');
+    // aud can be either a string or an array
+    if (Array.isArray(tokenClaims.aud)) {
+      expect(tokenClaims.aud).toContain('cloud-services');
+    } else {
+      expect(tokenClaims.aud).toBe('cloud-services');
+    }
     expect(tokenClaims.azp).toBe('cloud-services');
     expect(tokenClaims.idp).toBe('auth.stage.redhat.com');
 
@@ -136,7 +141,12 @@ test.describe('Internal User Permissions', () => {
     expect(tokenInfo).not.toBeNull();
     expect(tokenInfo?.hasIdpClaim).toBe(true);
     expect(tokenInfo?.idpValue).toBe('auth.stage.redhat.com');
-    expect(tokenInfo?.audience).toBe('cloud-services');
+    // aud can be either a string or an array
+    if (Array.isArray(tokenInfo?.audience)) {
+      expect(tokenInfo?.audience).toContain('cloud-services');
+    } else {
+      expect(tokenInfo?.audience).toBe('cloud-services');
+    }
     expect(tokenInfo?.client).toBe('cloud-services');
 
     console.log('✓ Internal token characteristics verified');

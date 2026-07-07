@@ -69,7 +69,14 @@ export default defineConfig({
     actionTimeout: 15000,
 
     // Ignore HTTPS errors (staging certs)
-    ignoreHTTPSErrors: true
+    ignoreHTTPSErrors: true,
+
+    // Use proxy for local development against stage (not needed in CI)
+    ...(!process.env.CI && {
+      proxy: {
+        server: 'http://squid.corp.redhat.com:3128'
+      }
+    })
   },
 
   projects: [
