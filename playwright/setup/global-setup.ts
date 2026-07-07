@@ -59,6 +59,15 @@ async function globalSetup(config: FullConfig) {
 
     // Fill in login form
     await page.fill('input[name="username"]', username);
+
+    // Click next/continue after username (if there's a separate step)
+    const nextButton = page.locator('input[type="submit"]').first();
+    if (await nextButton.isVisible()) {
+      await nextButton.click();
+    }
+
+    // Wait for password field to be visible and fill it
+    await page.waitForSelector('input[name="password"]:visible', { timeout: 10000 });
     await page.fill('input[name="password"]', password);
     await page.click('input[type="submit"]');
 
