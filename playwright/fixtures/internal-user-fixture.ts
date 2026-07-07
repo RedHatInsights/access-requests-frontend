@@ -169,8 +169,6 @@ export const test = base.extend<InternalUserFixtures>({
       );
     }
 
-    console.log(`\n🔐 Performing SSO login as: ${ssoUser}`);
-
     //=========================================================================
     // Step 1: Perform SSO Login (two-stage: SSO + Kerberos)
     //=========================================================================
@@ -230,8 +228,6 @@ export const test = base.extend<InternalUserFixtures>({
       ]).catch(() => {});
     }
 
-    console.log('✓ SSO login completed');
-
     // Wait for OIDC initialization
     await page.waitForTimeout(SSO_CONFIG.timeouts.oidcInit);
     if (page.url().includes('#')) {
@@ -243,8 +239,6 @@ export const test = base.extend<InternalUserFixtures>({
     // Step 2: Swap OIDC Token with is_internal: true
     //=========================================================================
 
-    console.log('\n🔄 Swapping OIDC session to set is_internal: true');
-
     // Find OIDC state in storage
     const oidcState = await page.evaluate(() => {
       const key = Object.keys(localStorage).find(k => k.startsWith('oidc.user:'));
@@ -254,8 +248,6 @@ export const test = base.extend<InternalUserFixtures>({
     if (!oidcState) {
       throw new Error('OIDC state not found in localStorage after SSO login');
     }
-
-    console.log(`✓ Found OIDC key: ${oidcState.key}`);
 
     // Get the current OIDC user data
     const oidcUserData = await page.evaluate((key) => {
@@ -299,8 +291,6 @@ export const test = base.extend<InternalUserFixtures>({
       claims
     });
 
-    console.log('✓ OIDC session swapped');
-
     // Reload to activate overrides (Storage.prototype.getItem will maintain is_internal: true)
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(SSO_CONFIG.timeouts.chromeReinit);
@@ -309,8 +299,6 @@ export const test = base.extend<InternalUserFixtures>({
     if (page.url().includes(SSO_CONFIG.console.ssoUrl)) {
       throw new Error('Session swap failed - redirected to SSO');
     }
-
-    console.log('✓ Internal user context ready (is_internal: true)');
 
     await use(page);
   },

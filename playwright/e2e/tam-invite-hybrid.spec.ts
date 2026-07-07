@@ -231,49 +231,38 @@ test.describe('TAM Invite - E2E Workflow', () => {
     // Step 1: Verify Identity (is_internal: true)
     //=======================================================================
 
-    console.log('\n✅ Step 1: Verifying internal user identity');
+    const identity = await page.request.get(SELECTORS.api.identity).then(r => r.json());
+    expect(identity.identity.user.is_internal).toBe(true);
+    expect(identity.identity.user.is_org_admin).toBe(true);
 
-      const identity = await page.request.get(SELECTORS.api.identity).then(r => r.json());
-      expect(identity.identity.user.is_internal).toBe(true);
-      expect(identity.identity.user.is_org_admin).toBe(true);
+    //=======================================================================
+    // Step 2: Navigate to TAM Invite Page
+    //=======================================================================
 
-      console.log(`✓ API identity: ${identity.identity.user.username}`);
-      console.log(`✓ is_internal: ${identity.identity.user.is_internal}`);
-      console.log(`✓ is_org_admin: ${identity.identity.user.is_org_admin}`);
+    await page.goto('/iam/my-user-access', {
+      waitUntil: 'domcontentloaded',
+      timeout: TIMEOUTS.PAGE_LOAD
+    });
+    await page.waitForTimeout(TIMEOUTS.FEDERATED_MODULE);
 
-      //=======================================================================
-      // Step 2: Navigate to TAM Invite Page
-      //=======================================================================
+    // Expand navigation
+    const userAccessButton = page.locator(SELECTORS.nav.userAccessButton).first();
+    if (await userAccessButton.isVisible()) {
+      await userAccessButton.click();
+      await page.waitForTimeout(TIMEOUTS.NAV_EXPAND);
+    }
 
-      console.log('\n🧭 Step 2: Navigating to TAM invite page');
-
-      await page.goto('/iam/my-user-access', {
-        waitUntil: 'domcontentloaded',
-        timeout: TIMEOUTS.PAGE_LOAD
-      });
-      await page.waitForTimeout(TIMEOUTS.FEDERATED_MODULE);
-
-      // Expand navigation
-      const userAccessButton = page.locator(SELECTORS.nav.userAccessButton).first();
-      if (await userAccessButton.isVisible()) {
-        await userAccessButton.click();
-        await page.waitForTimeout(TIMEOUTS.NAV_EXPAND);
-      }
-
-      // Click "Red Hat Access Requests"
-      const accessRequestsLink = page.locator(SELECTORS.nav.accessRequestsLink).first();
-      if (await accessRequestsLink.isVisible()) {
-        await accessRequestsLink.click();
-        await page.waitForTimeout(TIMEOUTS.NAV_CLICK);
-      }
-
-      console.log(`✓ Current URL: ${page.url()}`);
+    // Click "Red Hat Access Requests"
+    const accessRequestsLink = page.locator(SELECTORS.nav.accessRequestsLink).first();
+    if (await accessRequestsLink.isVisible()) {
+      await accessRequestsLink.click();
+      await page.waitForTimeout(TIMEOUTS.NAV_CLICK);
+    }
 
       //=======================================================================
       // Step 3: Verify Button and Test Workflow
       //=======================================================================
 
-      console.log('\n🎯 Step 3: Testing TAM invite workflow');
 
       // Verify chrome.auth.getUser() returns is_internal: true
       const chromeUser = await page.evaluate(async () => {
@@ -287,13 +276,11 @@ test.describe('TAM Invite - E2E Workflow', () => {
         return null;
       });
 
-      console.log(`✓ chrome.auth.getUser() is_internal: ${chromeUser?.is_internal}`);
       expect(chromeUser?.is_internal).toBe(true);
 
       // Find and click "Create request" button
       const createButton = page.locator(SELECTORS.tamInvite.createButton);
       await expect(createButton).toBeVisible();
-      console.log('✓ "Create request" button is visible');
 
       await createButton.click();
       await page.waitForTimeout(TIMEOUTS.MODAL_OPEN);
@@ -301,7 +288,6 @@ test.describe('TAM Invite - E2E Workflow', () => {
       // Verify modal opened
       const modal = page.locator(SELECTORS.tamInvite.modal);
       await expect(modal).toBeVisible();
-      console.log('✓ Wizard modal opened');
 
       await page.screenshot({ path: SCREENSHOTS.step1Initial, fullPage: true });
 
@@ -309,11 +295,9 @@ test.describe('TAM Invite - E2E Workflow', () => {
       // Step 4: Fill Form - Step 1 (Request Details)
       //=======================================================================
 
-      console.log('\n📝 Step 4: Filling wizard - Step 1');
 
       // Fill Organization ID (required field)
       await modal.locator(SELECTORS.wizard.orgIdInput).first().fill(TEST_DATA.orgId);
-      console.log(`✓ Org ID: ${TEST_DATA.orgId}`);
 
       // Fill dates if inputs are visible
       const dateInputs = modal.locator(SELECTORS.wizard.dateInput);
@@ -328,7 +312,6 @@ test.describe('TAM Invite - E2E Workflow', () => {
 
         await dateInputs.nth(0).fill(formatDate(startDate));
         await dateInputs.nth(1).fill(formatDate(endDate));
-        console.log('✓ Access dates set');
       }
 
       await page.screenshot({ path: SCREENSHOTS.step1Filled, fullPage: true });
@@ -339,7 +322,6 @@ test.describe('TAM Invite - E2E Workflow', () => {
       // Step 5: Fill Form - Step 2 (Select Roles)
       //=======================================================================
 
-      console.log('\n📝 Step 5: Filling wizard - Step 2');
 
       await page.screenshot({ path: SCREENSHOTS.step2Initial, fullPage: true });
 
@@ -349,7 +331,6 @@ test.describe('TAM Invite - E2E Workflow', () => {
 
       if (await firstRoleCheckbox.isVisible({ timeout: TIMEOUTS.MODAL_TRANSITION }).catch(() => false)) {
         await firstRoleCheckbox.click();
-        console.log('✓ Role selected');
       }
 
       await page.screenshot({ path: SCREENSHOTS.step2Filled, fullPage: true });
@@ -360,19 +341,16 @@ test.describe('TAM Invite - E2E Workflow', () => {
       // Step 6: Review and Submit
       //=======================================================================
 
-      console.log('\n✅ Step 6: Review and submit');
 
       await page.screenshot({ path: SCREENSHOTS.step3Review, fullPage: true });
 
       const submitButton = modal.locator(SELECTORS.wizard.submitButton);
       if (await submitButton.isVisible()) {
         await submitButton.click();
-        console.log('✓ Submit clicked');
 
         await page.waitForTimeout(TIMEOUTS.FORM_SUBMIT);
 
         if (!await modal.isVisible().catch(() => true)) {
-          console.log('✓ Modal closed - submission successful');
         }
       }
 
@@ -380,7 +358,6 @@ test.describe('TAM Invite - E2E Workflow', () => {
       // Step 7: Verify Request in Table
       //=======================================================================
 
-      console.log('\n📋 Step 7: Verifying request appears in table');
 
       await page.waitForTimeout(TIMEOUTS.TABLE_REFRESH);
 
@@ -390,7 +367,6 @@ test.describe('TAM Invite - E2E Workflow', () => {
       // Strategy 1: Look for the org ID in the table
       const orgIdCell = page.locator(`td:has-text("${TEST_DATA.orgId}"), [role="cell"]:has-text("${TEST_DATA.orgId}")`).first();
       if (await orgIdCell.isVisible({ timeout: 5000 }).catch(() => false)) {
-        console.log(`✓ Found request with org ID: ${TEST_DATA.orgId}`);
         requestFound = true;
 
         // Get the full row to check status
@@ -398,7 +374,6 @@ test.describe('TAM Invite - E2E Workflow', () => {
         const rowText = await row.textContent();
 
         if (rowText?.toLowerCase().includes('pending') || rowText?.toLowerCase().includes('submitted')) {
-          console.log('✓ Request has expected status');
         }
       }
 
@@ -408,19 +383,16 @@ test.describe('TAM Invite - E2E Workflow', () => {
         const firstRowText = await firstRow.textContent().catch(() => '');
 
         if (firstRowText?.includes(TEST_DATA.orgId)) {
-          console.log('✓ Found request as first row in table');
           requestFound = true;
         }
       }
 
       if (!requestFound) {
-        console.log('⚠ Request not found in table - listing visible rows for debugging:');
         const tableRows = page.locator('table tbody tr, [role="row"]');
         const rowCount = await tableRows.count();
 
         for (let i = 0; i < Math.min(rowCount, 5); i++) {
           const rowText = await tableRows.nth(i).textContent();
-          console.log(`  Row ${i + 1}: ${rowText?.substring(0, 100)}`);
         }
       }
 
@@ -429,6 +401,5 @@ test.describe('TAM Invite - E2E Workflow', () => {
       // Assert that we found the request
       expect(requestFound, 'Request should appear in the table after submission').toBe(true);
 
-      console.log('\n🎉 TAM INVITE WORKFLOW COMPLETED!');
   });
 });
