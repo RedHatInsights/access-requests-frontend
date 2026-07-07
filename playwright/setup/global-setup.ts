@@ -38,17 +38,22 @@ async function globalSetup(config: FullConfig) {
   // Create browser context and perform login
   const browser = await chromium.launch();
 
+  // Detect if running in Konflux CI (uses proxied stage.foo.redhat.com URL)
+  const isKonfluxCI = baseURL?.includes('stage.foo.redhat.com');
+
   // Use proxy for local development against stage (not needed in CI)
   const contextOptions: any = {
     baseURL: baseURL,
     ignoreHTTPSErrors: true,
   };
 
-  if (!process.env.CI) {
+  if (!isKonfluxCI) {
     contextOptions.proxy = {
       server: 'http://squid.corp.redhat.com:3128'
     };
     console.log('Using proxy for local development');
+  } else {
+    console.log('Running in Konflux CI - proxy disabled');
   }
 
   const context = await browser.newContext(contextOptions);
@@ -211,7 +216,7 @@ async function globalSetup(config: FullConfig) {
       ignoreHTTPSErrors: true,
     };
 
-    if (!process.env.CI) {
+    if (!isKonfluxCI) {
       authContextOptions.proxy = {
         server: 'http://squid.corp.redhat.com:3128'
       };
