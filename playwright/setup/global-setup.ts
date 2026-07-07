@@ -1,4 +1,5 @@
 import { chromium, FullConfig } from '@playwright/test';
+import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
 
 /**
  * Global setup for Playwright tests with internal user authentication.
@@ -56,6 +57,9 @@ async function globalSetup(config: FullConfig) {
   const context = await browser.newContext(contextOptions);
 
   const page = await context.newPage();
+
+  // Disable TrustArc cookie consent prompts (blocks clicks in CI)
+  await disableCookiePrompt(page);
 
   // Perform login to get authenticated token
   try {
