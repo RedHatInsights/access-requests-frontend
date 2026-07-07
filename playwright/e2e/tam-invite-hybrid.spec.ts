@@ -30,17 +30,6 @@ import { test, expect } from '../fixtures/internal-user-fixture';
 //=============================================================================
 
 const CONFIG = {
-  vault: {
-    addr: process.env.VAULT_ADDR || 'https://vault.devshift.net',
-    path: 'insights/secrets/qe/stage/users/idp_internal_user',
-  },
-  console: {
-    url: 'https://console.stage.redhat.com',
-    ssoUrl: 'sso.stage.redhat.com',
-  },
-  proxy: {
-    server: 'http://squid.corp.redhat.com:3128',
-  },
   test: {
     timeout: 180_000, // 3 minutes
     orgId: process.env.TAM_INVITE_ORG_ID || '1178977', // Target org for TAM access request
