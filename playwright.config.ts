@@ -71,9 +71,8 @@ export default defineConfig({
     // Ignore HTTPS errors (staging certs)
     ignoreHTTPSErrors: true,
 
-    // Use proxy for local development against stage (not needed in Konflux CI)
-    // Konflux CI uses proxied stage.foo.redhat.com URL
-    ...(!(process.env.BASE_URL || '').includes('stage.foo.redhat.com') && {
+    // Use proxy for local development against stage (not needed in CI)
+    ...(!process.env.CI && {
       proxy: {
         server: 'http://squid.corp.redhat.com:3128'
       }

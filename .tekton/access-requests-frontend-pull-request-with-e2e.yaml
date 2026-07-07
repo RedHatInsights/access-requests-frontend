@@ -82,6 +82,9 @@ spec:
       #!/bin/bash
       set -ex
 
+      # Set CI environment variable for Playwright config
+      export CI=true
+
       # Wait for application to be ready
       echo "Waiting for application server to be ready..."
       timeout 120s bash -c 'until curl -k https://stage.foo.redhat.com:1337 > /dev/null 2>&1; do
