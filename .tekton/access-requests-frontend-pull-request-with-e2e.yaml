@@ -57,6 +57,15 @@ spec:
 
       echo "Starting application with Caddy using Caddyfile from image..."
       echo "PATH is: $PATH"
+      echo "Current user: $(whoami)"
+      echo "Current directory: $(pwd)"
+
+      # Check what files exist in the container
+      echo "Contents of /:"
+      ls -la / | head -20
+
+      echo "Contents of /usr/bin (first 30):"
+      ls -la /usr/bin | head -30
 
       # Check if /usr/bin/caddy exists and its permissions
       echo "Checking /usr/bin/caddy..."
