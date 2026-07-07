@@ -30,9 +30,10 @@ The TAM (Technical Account Manager) invite workflow and other internal-only feat
 
 3. **The Solution - Internal User Fixture:**
    - Use `playwright/fixtures/internal-user-fixture.ts` for tests needing internal access
-   - The fixture creates a browser context with `chrome.auth.getUser()` override
-   - Gets authenticated token from global-setup and swaps the OIDC token
-   - Sets `profile.is_internal: true` in the override
+   - The fixture performs SSO login and swaps the OIDC token with `is_internal: true`
+   - TWO-LAYER override ensures `is_internal: true` persists across navigations:
+     - **Layer 1**: `Storage.prototype.getItem` - intercepts ALL localStorage reads for OIDC keys
+     - **Layer 2**: `chrome.auth.getUser()` - wraps the function to inject `is_internal: true`
    - Returns an `internalUserPage` ready to test internal-only features
 
 4. **Usage:**
@@ -47,12 +48,13 @@ The TAM (Technical Account Manager) invite workflow and other internal-only feat
 
 5. **Why This Can't Be Removed:**
    - The token swap is essential for internal-only features to work
-   - A fresh browser context is required (can't use global-setup's session)
-   - The chrome.auth override MUST be installed before page loads
+   - The TWO-LAYER override is critical to maintain `is_internal: true` across page navigations
+   - Layer 1 (Storage.prototype) ensures every localStorage read returns the override
+   - Layer 2 (chrome.auth) ensures the frontend API also returns the override
    - This is not "legacy code" - it's a necessary workaround for JWT/API mismatch
 
 **Files:**
-- `playwright/fixtures/internal-user-fixture.ts` - The reusable fixture (195 lines)
+- `playwright/fixtures/internal-user-fixture.ts` - The reusable fixture with SSO login + token swap
 - `playwright/e2e/tam-invite-hybrid.spec.ts` - Example usage
 
 ### Key Implementation Details
