@@ -56,7 +56,21 @@ spec:
       set -ex
 
       echo "Starting application with Caddy using Caddyfile from image..."
-      caddy run --config /etc/caddy/Caddyfile
+      echo "PATH is: $PATH"
+      echo "Looking for caddy binary..."
+      which caddy || find / -name caddy -type f 2>/dev/null | head -5 || echo "caddy not found"
+
+      # Try different possible locations
+      if [ -x /usr/bin/caddy ]; then
+        /usr/bin/caddy run --config /etc/caddy/Caddyfile
+      elif [ -x /usr/local/bin/caddy ]; then
+        /usr/local/bin/caddy run --config /etc/caddy/Caddyfile
+      elif [ -x /opt/caddy/caddy ]; then
+        /opt/caddy/caddy run --config /etc/caddy/Caddyfile
+      else
+        echo "ERROR: Cannot find caddy binary!"
+        exit 1
+      fi
   - name: e2e-tests-script
     value: |
       #!/bin/bash
