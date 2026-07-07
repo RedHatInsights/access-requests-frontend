@@ -1,5 +1,36 @@
 import { test as base, Browser, BrowserContext, Page } from '@playwright/test';
 import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Configuration for SSO login
+ */
+const SSO_CONFIG = {
+  console: {
+    url: process.env.BASE_URL || 'https://console.stage.redhat.com',
+    ssoUrl: 'sso.stage.redhat.com',
+  },
+  proxy: process.env.CI ? undefined : { server: 'http://squid.corp.redhat.com:3128' },
+  timeouts: {
+    pageLoad: 60_000,
+    ssoRedirect: 30_000,
+    ssoStage: 15_000,
+    oidcInit: 2_000,
+    chromeReinit: 5_000,
+  },
+} as const;
+
+/**
+ * SSO Selectors
+ */
+const SSO_SELECTORS = {
+  usernameInput: 'input[name="username"]',
+  passwordInput: 'input[name="password"]',
+  nextButton: 'button:has-text("Next"), input[type="submit"]',
+  submitButton: 'input[type="submit"], button[type="submit"]',
+  greeting: 'text=Hi,',
+} as const;
 
 /**
  * Internal User Fixture
@@ -40,24 +71,55 @@ type InternalUserFixtures = {
 /**
  * Creates the chrome.auth.getUser() override script.
  * This forces is_internal: true in the user profile.
+ *
+ * TWO-LAYER APPROACH (from 3scale-interaction PoC):
+ * Layer 1: Intercept localStorage.getItem() to inject is_internal: true on every read
+ * Layer 2: Override chrome.auth.getUser() to inject is_internal: true
+ *
+ * Layer 1 is critical - it ensures the override persists across page navigations
+ * and component re-renders, since every localStorage read gets the override.
  */
 function createChromeAuthOverride() {
   return `
-    // Override chrome.auth.getUser() to return is_internal: true
-    window.insights = window.insights || {};
-    window.insights.chrome = window.insights.chrome || {};
-    window.insights.chrome.auth = window.insights.chrome.auth || {};
-
-    const originalGetUser = window.insights.chrome.auth.getUser;
-
-    window.insights.chrome.auth.getUser = async function() {
-      const user = originalGetUser ? await originalGetUser.call(this) : null;
-      if (user && user.identity && user.identity.user) {
-        // Force is_internal to true
-        user.identity.user.is_internal = true;
+    // Layer 1: Override localStorage reads to inject is_internal: true
+    // This is the "work-around" to repeatedly ensure the session stays in place
+    const originalGetItem = Storage.prototype.getItem;
+    Storage.prototype.getItem = function(key) {
+      const value = originalGetItem.call(this, key);
+      if (key.startsWith('oidc.user:') && value) {
+        try {
+          const data = JSON.parse(value);
+          if (data.profile) {
+            data.profile.is_internal = true;
+            return JSON.stringify(data);
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
       }
-      return user;
+      return value;
     };
+
+    // Layer 2: Override chrome.auth.getUser() before React mounts
+    const POLL_INTERVAL = 50;
+    const POLL_TIMEOUT = 30_000;
+
+    const checkInterval = setInterval(() => {
+      if (window.insights?.chrome?.auth?.getUser) {
+        clearInterval(checkInterval);
+
+        const originalGetUser = window.insights.chrome.auth.getUser;
+        window.insights.chrome.auth.getUser = async function() {
+          const user = await originalGetUser.call(this);
+          if (user?.identity?.user) {
+            user.identity.user.is_internal = true;
+          }
+          return user;
+        };
+      }
+    }, POLL_INTERVAL);
+
+    setTimeout(() => clearInterval(checkInterval), POLL_TIMEOUT);
   `;
 }
 
@@ -77,15 +139,15 @@ function decodeJWT(token: string): any {
 
 export const test = base.extend<InternalUserFixtures>({
   internalUserContext: async ({ browser }, use) => {
-    // Create a new browser context with chrome.auth override
-    // IMPORTANT: Load the storageState from global-setup to get the authenticated session
+    // Create a fresh browser context with chrome.auth override
+    // Do NOT load storageState - we'll perform SSO login directly
     const context = await browser.newContext({
-      baseURL: process.env.BASE_URL || 'https://console.stage.redhat.com',
+      baseURL: SSO_CONFIG.console.url,
       ignoreHTTPSErrors: true,
-      storageState: 'playwright/.auth/internal-user.json', // Load authenticated state
+      ...(SSO_CONFIG.proxy && { proxy: SSO_CONFIG.proxy }),
     });
 
-    // Install chrome.auth.getUser() override BEFORE any page loads
+    // Install TWO-LAYER chrome.auth.getUser() override BEFORE any page loads
     await context.addInitScript(createChromeAuthOverride());
 
     await use(context);
@@ -96,39 +158,119 @@ export const test = base.extend<InternalUserFixtures>({
   internalUserPage: async ({ internalUserContext }, use) => {
     const page = await internalUserContext.newPage();
 
-    // Disable cookie consent popup
-    await disableCookiePrompt(page);
+    // Get credentials from environment
+    const ssoUser = process.env.E2E_USER;
+    const ssoPassword = process.env.E2E_PASSWORD;
 
-    // Navigate to console to trigger OIDC initialization
-    const baseURL = process.env.BASE_URL || 'https://console.stage.redhat.com';
-    await page.goto(baseURL, {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
-    });
-
-    // Wait for OIDC initialization
-    await page.waitForTimeout(2000);
-
-    // Get the authenticated token from global-setup
-    const token = await page.evaluate(() => localStorage.getItem('cs_jwt'));
-
-    if (!token) {
-      throw new Error('cs_jwt token not found - global-setup may have failed');
+    if (!ssoUser || !ssoPassword) {
+      throw new Error(
+        'E2E_USER and E2E_PASSWORD environment variables must be set.\n\n' +
+        'These are required for SSO authentication in the internal user fixture.'
+      );
     }
 
-    const claims = decodeJWT(token);
+    console.log(`\n🔐 Performing SSO login as: ${ssoUser}`);
 
-    // Find OIDC state in localStorage
+    //=========================================================================
+    // Step 1: Perform SSO Login (two-stage: SSO + Kerberos)
+    //=========================================================================
+
+    await disableCookiePrompt(page);
+    await page.goto(SSO_CONFIG.console.url, {
+      waitUntil: 'domcontentloaded',
+      timeout: SSO_CONFIG.timeouts.pageLoad
+    });
+    await page.waitForURL(`**/${SSO_CONFIG.console.ssoUrl}/**`, {
+      timeout: SSO_CONFIG.timeouts.ssoRedirect
+    });
+
+    // SSO Stage 1: Username and password
+    await page.waitForSelector(SSO_SELECTORS.usernameInput, { state: 'visible' });
+    await page.fill(SSO_SELECTORS.usernameInput, ssoUser);
+    await page.click(SSO_SELECTORS.nextButton);
+
+    // Handle email linking modal if it appears
+    const modalNextButton = page.locator('button:has-text("Next")').first();
+    if (await modalNextButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await modalNextButton.click();
+      await page.waitForTimeout(1000);
+    }
+
+    await page.waitForSelector(SSO_SELECTORS.passwordInput, { state: 'visible' });
+    await page.fill(SSO_SELECTORS.passwordInput, ssoPassword);
+    await page.click(SSO_SELECTORS.submitButton);
+
+    // SSO Stage 2: Kerberos prompt (if appears)
+    await Promise.race([
+      page.waitForSelector(SSO_SELECTORS.usernameInput, {
+        state: 'visible',
+        timeout: SSO_CONFIG.timeouts.ssoStage
+      }),
+      page.waitForURL(`**/${SSO_CONFIG.console.url.replace('https://', '')}/**`, {
+        timeout: SSO_CONFIG.timeouts.ssoStage
+      }),
+      page.waitForSelector(SSO_SELECTORS.greeting, {
+        state: 'visible',
+        timeout: SSO_CONFIG.timeouts.ssoStage
+      })
+    ]).catch(() => {});
+
+    if (await page.locator(SSO_SELECTORS.usernameInput).isVisible().catch(() => false)) {
+      await page.fill(SSO_SELECTORS.usernameInput, ssoUser);
+      await page.fill(SSO_SELECTORS.passwordInput, ssoPassword);
+      await page.click(SSO_SELECTORS.submitButton);
+      await Promise.race([
+        page.waitForURL(`**/${SSO_CONFIG.console.url.replace('https://', '')}/**`, {
+          timeout: SSO_CONFIG.timeouts.ssoStage
+        }),
+        page.waitForSelector(SSO_SELECTORS.greeting, {
+          state: 'visible',
+          timeout: SSO_CONFIG.timeouts.ssoStage
+        })
+      ]).catch(() => {});
+    }
+
+    console.log('✓ SSO login completed');
+
+    // Wait for OIDC initialization
+    await page.waitForTimeout(SSO_CONFIG.timeouts.oidcInit);
+    if (page.url().includes('#')) {
+      await page.goto(SSO_CONFIG.console.url, { waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(SSO_CONFIG.timeouts.oidcInit);
+    }
+
+    //=========================================================================
+    // Step 2: Swap OIDC Token with is_internal: true
+    //=========================================================================
+
+    console.log('\n🔄 Swapping OIDC session to set is_internal: true');
+
+    // Find OIDC state in storage
     const oidcState = await page.evaluate(() => {
       const key = Object.keys(localStorage).find(k => k.startsWith('oidc.user:'));
       return key ? { key, storage: 'localStorage' } : null;
     });
 
     if (!oidcState) {
-      throw new Error('OIDC state not found in localStorage');
+      throw new Error('OIDC state not found in localStorage after SSO login');
     }
 
-    // Swap OIDC token with is_internal override
+    console.log(`✓ Found OIDC key: ${oidcState.key}`);
+
+    // Get the current OIDC user data
+    const oidcUserData = await page.evaluate((key) => {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    }, oidcState.key);
+
+    if (!oidcUserData || !oidcUserData.id_token) {
+      throw new Error('No token found in OIDC state');
+    }
+
+    const token = oidcUserData.id_token;
+    const claims = decodeJWT(token);
+
+    // Swap to our version with is_internal: true override
     await page.evaluate(({ oidcKey, token, claims }) => {
       const newOidcUser = {
         id_token: token,
@@ -149,8 +291,6 @@ export const test = base.extend<InternalUserFixtures>({
 
       localStorage.setItem(oidcKey, JSON.stringify(newOidcUser));
       localStorage.setItem('cs_jwt', token);
-
-      // Also set cookie
       const expires = new Date(claims.exp * 1000).toUTCString();
       document.cookie = `cs_jwt=${token}; path=/; domain=.stage.redhat.com; secure; expires=${expires}`;
     }, {
@@ -159,13 +299,15 @@ export const test = base.extend<InternalUserFixtures>({
       claims
     });
 
-    // Reload to activate the override
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(1000);
+    console.log('✓ OIDC session swapped');
 
-    // Verify we didn't get redirected to SSO
-    if (page.url().includes('sso.stage.redhat.com')) {
-      throw new Error('Token swap failed - redirected to SSO');
+    // Reload to activate overrides (Storage.prototype.getItem will maintain is_internal: true)
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(SSO_CONFIG.timeouts.chromeReinit);
+
+    // Verify session is valid
+    if (page.url().includes(SSO_CONFIG.console.ssoUrl)) {
+      throw new Error('Session swap failed - redirected to SSO');
     }
 
     console.log('✓ Internal user context ready (is_internal: true)');

@@ -222,17 +222,16 @@ test.describe('TAM Invite - E2E Workflow', () => {
     test.setTimeout(CONFIG.test.timeout);
 
     // The internalUserPage fixture has already:
-    // - Created a browser context with chrome.auth override
+    // - Created a browser context with TWO-LAYER chrome.auth override
     // - Swapped the OIDC token to set is_internal: true
     // - Verified the session is valid
     // We can now proceed directly to testing the TAM workflow
 
-    try {
-      //=======================================================================
-      // Step 1: Verify Identity (is_internal: true)
-      //=======================================================================
+    //=======================================================================
+    // Step 1: Verify Identity (is_internal: true)
+    //=======================================================================
 
-      console.log('\n✅ Step 1: Verifying internal user identity');
+    console.log('\n✅ Step 1: Verifying internal user identity');
 
       const identity = await page.request.get(SELECTORS.api.identity).then(r => r.json());
       expect(identity.identity.user.is_internal).toBe(true);
@@ -431,9 +430,5 @@ test.describe('TAM Invite - E2E Workflow', () => {
       expect(requestFound, 'Request should appear in the table after submission').toBe(true);
 
       console.log('\n🎉 TAM INVITE WORKFLOW COMPLETED!');
-
-    } finally {
-      await context.close();
-    }
   });
 });
