@@ -49,15 +49,12 @@ export default defineConfig({
 
   use: {
     // Base URL for the application
+    // In CI (Konflux): Uses https://stage.foo.redhat.com:1337 (proxied environment)
+    // Locally: Can override with BASE_URL env var
     baseURL: process.env.BASE_URL || 'https://console.stage.redhat.com',
 
     // Storage state file (contains authenticated session)
     storageState: 'playwright/.auth/internal-user.json',
-
-    // Proxy for stage environment
-    proxy: {
-      server: 'http://squid.corp.redhat.com:3128'
-    },
 
     // Collect trace on failure for debugging
     trace: 'on-first-retry',

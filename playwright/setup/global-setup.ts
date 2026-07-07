@@ -1,18 +1,16 @@
 import { chromium, FullConfig } from '@playwright/test';
-import { getInternalUserToken } from '../vault-client';
 
 /**
  * Global setup for Playwright tests with internal user authentication.
  *
  * This setup:
- * 1. Fetches internal user token from Vault using node-vault
- * 2. Injects token into browser storage
- * 3. Saves authenticated state for all tests to use
+ * 1. Authenticates using E2E_USER and E2E_PASSWORD environment variables
+ * 2. Extracts the JWT token from the authenticated session
+ * 3. Injects token and OIDC state into browser storage
+ * 4. Saves authenticated state for all tests to use
  *
  * Prerequisites:
- * - Red Hat VPN connection
- * - Vault token authentication (VAULT_TOKEN env var or ~/.vault-token)
- * - Access to insights/secrets/qe/stage/users/idp_internal_user in Vault
+ * - E2E_USER and E2E_PASSWORD environment variables (provided by ExternalSecret in CI)
  */
 
 async function globalSetup(config: FullConfig) {
@@ -23,38 +21,61 @@ async function globalSetup(config: FullConfig) {
     return;
   }
 
+  const username = process.env.E2E_USER;
+  const password = process.env.E2E_PASSWORD;
+
+  if (!username || !password) {
+    console.error('❌ E2E_USER or E2E_PASSWORD environment variables not set');
+    console.error('Set these before running tests:');
+    console.error('  export E2E_USER=your-username');
+    console.error('  export E2E_PASSWORD=your-password');
+    throw new Error('Missing E2E credentials');
+  }
+
   console.log('🔐 Setting up internal user authentication...');
+  console.log('Using E2E_USER:', username);
 
-  // Get internal user token from Vault
-  const token = await getInternalUserToken();
-
+  // Create browser context and perform login
   const browser = await chromium.launch();
   const context = await browser.newContext({
     baseURL: baseURL,
     ignoreHTTPSErrors: true,
-    // Use proxy for stage environment
-    proxy: {
-      server: 'http://squid.corp.redhat.com:3128'
-    }
   });
 
   const page = await context.newPage();
 
+  // Perform login to get authenticated token
   try {
-    // Set cookie before navigation
-    await context.addCookies([{
-      name: 'cs_jwt',
-      value: token,
-      domain: '.stage.redhat.com',
-      path: '/',
-      expires: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hour from now
-      httpOnly: false,
-      secure: true,
-      sameSite: 'None'
-    }]);
+    // Navigate to login
+    const loginUrl = 'https://sso.stage.redhat.com/auth/realms/redhat-external/protocol/openid-connect/auth';
+    const params = new URLSearchParams({
+      client_id: 'cloud-services',
+      redirect_uri: baseURL || 'https://console.stage.redhat.com',
+      response_type: 'code',
+      scope: 'openid',
+    });
 
-    // Navigate to the application
-    await page.goto(baseURL || '/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.goto(`${loginUrl}?${params.toString()}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+    // Fill in login form
+    await page.fill('input[name="username"]', username);
+    await page.fill('input[name="password"]', password);
+    await page.click('input[type="submit"]');
+
+    // Wait for redirect
+    await page.waitForURL((url) => url.hostname.includes('redhat.com'), { timeout: 30000 });
+
+    // Extract the cs_jwt token from cookies
+    const cookies = await context.cookies();
+    const csJwtCookie = cookies.find(c => c.name === 'cs_jwt');
+
+    if (!csJwtCookie) {
+      throw new Error('cs_jwt cookie not found after login');
+    }
+
+    const token = csJwtCookie.value;
+
+    console.log('✓ Token extracted from cookies');
 
     // Decode token to get claims
     const payload = token.split('.')[1];
@@ -125,28 +146,10 @@ async function globalSetup(config: FullConfig) {
     console.log('✓ is_internal:', identity.identity.user.is_internal);
     console.log('✓ Org ID:', identity.identity.org_id);
 
-    // Get sessionStorage data
-    const sessionStorageData = await page.evaluate(() => {
-      const data: Record<string, string> = {};
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key) {
-          data[key] = sessionStorage.getItem(key) || '';
-        }
-      }
-      return data;
-    });
-
     // Save authenticated state (includes localStorage and cookies)
     await context.storageState({ path: storageState as string });
 
-    // Also save sessionStorage separately
-    const fs = require('fs');
-    const sessionStoragePath = (storageState as string).replace('.json', '-session.json');
-    fs.writeFileSync(sessionStoragePath, JSON.stringify(sessionStorageData, null, 2));
-
     console.log('✓ Authentication state saved to:', storageState);
-    console.log('✓ Session storage saved to:', sessionStoragePath);
   } catch (error) {
     console.error('❌ Global setup failed:', error);
     throw error;
