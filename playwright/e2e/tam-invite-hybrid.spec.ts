@@ -2,7 +2,6 @@
 
 import { test, expect } from '@playwright/test';
 import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
-import { getInternalUserToken, getInternalUserCredentials } from '../vault-client';
 
 /**
  * TAM Invite E2E Test - Hybrid Authentication Approach
@@ -221,22 +220,22 @@ test.describe('TAM Invite - E2E Workflow', () => {
     test.setTimeout(CONFIG.test.timeout);
 
     //=========================================================================
-    // Setup: Get credentials and token from Vault
+    // Setup: Get token from authenticated session (set by global-setup)
     //=========================================================================
 
-    console.log('📋 Fetching credentials from Vault...');
+    console.log('📋 Getting token from authenticated session...');
 
-    const [credentials, vaultToken] = await Promise.all([
-      getInternalUserCredentials(),
-      getInternalUserToken(),
-    ]);
+    // The global-setup has already authenticated and saved the token
+    // We just need to read it from localStorage to use in the token swap
+    const vaultToken = await page.evaluate(() => localStorage.getItem('cs_jwt'));
 
-    const ssoUser = process.env.E2E_USER || credentials.username;
-    const ssoPassword = process.env.E2E_PASSWORD || credentials.password;
+    if (!vaultToken) {
+      throw new Error('cs_jwt token not found - global-setup may have failed');
+    }
+
     const vaultClaims = decodeJWT(vaultToken);
 
-    console.log(`✓ Using SSO user: ${ssoUser}`);
-    console.log(`✓ Vault token user: ${vaultClaims.username}`);
+    console.log(`✓ Token user: ${vaultClaims.username}`);
     console.log(`✓ Token has idp claim: ${vaultClaims.idp}`);
 
     //=========================================================================
@@ -256,73 +255,27 @@ test.describe('TAM Invite - E2E Workflow', () => {
 
     try {
       //=======================================================================
-      // Step 1: Perform SSO Login (two-stage: SSO + Kerberos)
+      // Step 1: Navigate to console (already authenticated by global-setup)
       //=======================================================================
 
-      console.log('\n🔐 Step 1: SSO Authentication');
+      console.log('\n🔐 Step 1: Loading console');
 
       await disableCookiePrompt(page);
       await page.goto(CONFIG.console.url, {
         waitUntil: 'domcontentloaded',
         timeout: TIMEOUTS.PAGE_LOAD
       });
-      await page.waitForURL(`**/${CONFIG.console.ssoUrl}/**`, {
-        timeout: TIMEOUTS.SSO_REDIRECT
-      });
-
-      // SSO Stage 1: Username and password
-      await page.waitForSelector(SELECTORS.sso.usernameInput, { state: 'visible' });
-      await page.fill(SELECTORS.sso.usernameInput, ssoUser);
-      await page.click(SELECTORS.sso.nextButton);
-
-      await page.waitForSelector(SELECTORS.sso.passwordInput, { state: 'visible' });
-      await page.fill(SELECTORS.sso.passwordInput, ssoPassword);
-      await page.click(SELECTORS.sso.submitButton);
-
-      // SSO Stage 2: Kerberos prompt (if appears)
-      await Promise.race([
-        page.waitForSelector(SELECTORS.sso.usernameInput, {
-          state: 'visible',
-          timeout: TIMEOUTS.SSO_STAGE
-        }),
-        page.waitForURL(`**/${CONFIG.console.url.replace('https://', '')}/**`, {
-          timeout: TIMEOUTS.SSO_STAGE
-        }),
-        page.waitForSelector(SELECTORS.sso.greeting, {
-          state: 'visible',
-          timeout: TIMEOUTS.SSO_STAGE
-        })
-      ]);
-
-      if (await page.locator(SELECTORS.sso.usernameInput).isVisible()) {
-        await page.fill(SELECTORS.sso.usernameInput, ssoUser);
-        await page.fill(SELECTORS.sso.passwordInput, ssoPassword);
-        await page.click(SELECTORS.sso.submitButton);
-        await Promise.race([
-          page.waitForURL(`**/${CONFIG.console.url.replace('https://', '')}/**`, {
-            timeout: TIMEOUTS.SSO_STAGE
-          }),
-          page.waitForSelector(SELECTORS.sso.greeting, {
-            state: 'visible',
-            timeout: TIMEOUTS.SSO_STAGE
-          })
-        ]);
-      }
-
-      console.log('✓ SSO login completed');
 
       // Wait for OIDC initialization
       await page.waitForTimeout(TIMEOUTS.OIDC_INIT);
-      if (page.url().includes('#')) {
-        await page.goto(CONFIG.console.url, { waitUntil: 'domcontentloaded' });
-        await page.waitForTimeout(TIMEOUTS.OIDC_INIT);
-      }
+
+      console.log('✓ Console loaded (already authenticated via global-setup)');
 
       //=======================================================================
-      // Step 2: Swap OIDC Token
+      // Step 2: Swap OIDC Token with is_internal override
       //=======================================================================
 
-      console.log('\n🔄 Step 2: Swapping OIDC session');
+      console.log('\n🔄 Step 2: Applying is_internal override to OIDC session');
 
       // Find OIDC state in storage
       const oidcState = await page.evaluate(() => {
