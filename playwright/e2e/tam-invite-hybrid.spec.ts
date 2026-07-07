@@ -1,7 +1,6 @@
 /// <reference path="../types/window.d.ts" />
 
 import { test, expect } from '../fixtures/internal-user-fixture';
-import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
 
 /**
  * TAM Invite E2E Test
@@ -150,68 +149,6 @@ const TEST_DATA = {
     };
   },
 } as const;
-
-// Disable storage state - we manage auth manually
-// Note: We use the storageState from global-setup (internal-user.json)
-// The internal-user-fixture loads this automatically
-
-//=============================================================================
-// JWT Helper Function
-//=============================================================================
-
-function decodeJWT(token: string): any {
-  const payload = token.split('.')[1];
-  const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
-  return JSON.parse(Buffer.from(padded, 'base64').toString());
-}
-
-//=============================================================================
-// Override Installation Helper
-//=============================================================================
-
-function createChromeAuthOverride() {
-  return () => {
-    // Layer 1: Override localStorage reads to inject is_internal: true
-    const originalGetItem = Storage.prototype.getItem;
-    Storage.prototype.getItem = function(key) {
-      const value = originalGetItem.call(this, key);
-      if (key.startsWith('oidc.user:') && value) {
-        try {
-          const data = JSON.parse(value);
-          if (data.profile) {
-            data.profile.is_internal = true;
-            return JSON.stringify(data);
-          }
-        } catch (e) {
-          // Ignore parse errors
-        }
-      }
-      return value;
-    };
-
-    // Layer 2: Override chrome.auth.getUser() before React mounts
-    const POLL_INTERVAL = 50;
-    const POLL_TIMEOUT = 30_000;
-
-    const checkInterval = setInterval(() => {
-      if (window.insights?.chrome?.auth?.getUser) {
-        clearInterval(checkInterval);
-
-        const originalGetUser = window.insights.chrome.auth.getUser;
-        window.insights.chrome.auth.getUser = async () => {
-          const user = await originalGetUser();
-          if (user?.identity?.user) {
-            user.identity.user.is_internal = true;
-          }
-          return user;
-        };
-      }
-    }, POLL_INTERVAL);
-
-    setTimeout(() => clearInterval(checkInterval), POLL_TIMEOUT);
-  };
-}
 
 //=============================================================================
 // Test Suite
