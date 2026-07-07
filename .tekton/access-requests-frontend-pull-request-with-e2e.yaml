@@ -90,24 +90,6 @@ spec:
       done'
       echo "Dev server ready!"
 
-      # Set Vault address for tests
-      export VAULT_ADDR=https://vault.devshift.net
-
-      # Check if Vault token is available (from secret)
-      if [ -z "$VAULT_TOKEN" ]; then
-        echo "WARNING: VAULT_TOKEN not set - E2E tests requiring Vault will be skipped"
-        echo "To enable Vault-based tests, add VAULT_TOKEN to the credentials secret"
-        exit 0
-      fi
-
-      # Verify Vault access
-      echo "Verifying Vault access..."
-      if ! vault kv get insights/secrets/qe/stage/users/idp_internal_user > /dev/null 2>&1; then
-        echo "WARNING: Cannot access Vault secret - E2E tests will be skipped"
-        echo "Vault token may be expired or insufficient permissions"
-        exit 0
-      fi
-
       echo "Running Playwright E2E tests..."
       npx playwright test
   - name: e2e-credentials-secret
