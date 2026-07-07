@@ -11,6 +11,38 @@ The E2E tests use **environment variable-based authentication** instead of Vault
 - The token is set as a cookie with specific domain/path configuration
 - OIDC state is injected into sessionStorage for react-oidc-context
 
+### TAM Invite Test - Internal User Requirement (CRITICAL)
+
+**DO NOT REMOVE THE TOKEN SWAPPING LOGIC FROM TAM INVITE TEST!**
+
+The TAM (Technical Account Manager) invite workflow **requires** `is_internal: true` to work:
+
+1. **Why TAM needs internal user:**
+   - The "Create request" button for TAM invites is only visible to internal Red Hat users
+   - The backend TAM invite API endpoints check `is_internal: true`
+   - Without this flag, the entire TAM workflow is inaccessible
+
+2. **The Problem:**
+   - JWT tokens from SSO login have `is_internal: false` in claims (even for internal users)
+   - The 3scale API gateway injects `is_internal: true` in API responses
+   - BUT the frontend reads `chrome.auth.getUser()` which reads JWT claims directly
+   - React components cache this user object before API calls complete
+
+3. **The Solution - Token Swap + Override:**
+   - The test gets the authenticated token from global-setup
+   - Creates a fresh browser context with `createChromeAuthOverride()` installed
+   - Swaps the OIDC token and sets `profile.is_internal: true` in the override
+   - This ensures `chrome.auth.getUser()` returns `is_internal: true` when components mount
+
+4. **Why We Can't Simplify:**
+   - Removing the token swap breaks the TAM workflow (button won't appear)
+   - The test MUST create a new browser context (can't use global-setup's session)
+   - The chrome.auth override MUST be installed before page loads
+   - This is not "legacy code" - it's essential for testing internal-only features
+
+**File:** `playwright/e2e/tam-invite-hybrid.spec.ts`
+**Key Functions:** `createChromeAuthOverride()`, token swap logic around line 320-365
+
 ### Key Implementation Details
 
 #### 1. Cookie Setup (Critical for API Access)

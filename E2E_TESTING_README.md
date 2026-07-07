@@ -10,6 +10,24 @@ The tests authenticate using **E2E_USER and E2E_PASSWORD** environment variables
 
 This approach eliminates the VPN requirement and works in both local and CI environments.
 
+### TAM Invite Test - Special Requirements ⚠️
+
+**The TAM invite test requires special handling and CANNOT be simplified like other tests.**
+
+The TAM (Technical Account Manager) invite feature is **internal-user-only**:
+- The "Create request" button only appears when `is_internal: true`
+- Backend APIs reject requests without this flag
+- JWT tokens from SSO have `is_internal: false` even for internal users
+
+**The Solution:**
+The `tam-invite-hybrid.spec.ts` test performs **token swapping with chrome.auth override**:
+1. Gets authenticated token from global-setup
+2. Creates new browser context with `createChromeAuthOverride()` installed
+3. Swaps OIDC token and sets `profile.is_internal: true` in the override
+4. This ensures `chrome.auth.getUser()` returns the correct flag when React components mount
+
+**Important:** Do NOT remove the token swapping logic - it's essential for testing internal-only features. The test file has detailed comments explaining why each step is necessary.
+
 ## Quick Links
 
 - **[E2E_TESTING_SETUP.md](E2E_TESTING_SETUP.md)** - Complete setup guide, adaptation instructions, troubleshooting

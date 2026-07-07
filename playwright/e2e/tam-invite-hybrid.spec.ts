@@ -6,23 +6,41 @@ import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth
 /**
  * TAM Invite E2E Test - Hybrid Authentication Approach
  *
+ * ⚠️  CRITICAL: DO NOT REMOVE THE TOKEN SWAPPING AND CHROME.AUTH OVERRIDE LOGIC! ⚠️
+ *
  * Tests the complete TAM (Technical Account Manager) invite workflow including:
- * - Button visibility with is_internal: true
+ * - Button visibility with is_internal: true (ONLY visible to internal users)
  * - Form submission (3-step wizard)
  * - Request verification in table
  *
+ * WHY THIS TEST REQUIRES SPECIAL HANDLING:
+ * ========================================
+ * The TAM invite feature is INTERNAL-USER-ONLY. Without is_internal: true:
+ * - The "Create request" button does not appear
+ * - Backend TAM APIs reject the requests
+ * - The entire workflow is inaccessible
+ *
+ * THE PROBLEM:
+ * ============
+ * - JWT tokens from SSO login have is_internal: FALSE in claims (even for internal users)
+ * - The 3scale API gateway injects is_internal: TRUE in API responses
+ * - BUT the frontend reads chrome.auth.getUser() which reads JWT claims directly
+ * - React components cache the user object BEFORE API calls complete
+ *
+ * THE SOLUTION (DO NOT REMOVE):
+ * ==============================
+ * 1. Get authenticated token from global-setup (already has valid session)
+ * 2. Create NEW browser context with createChromeAuthOverride() installed
+ * 3. Swap OIDC token and set profile.is_internal: true in the override
+ * 4. This ensures chrome.auth.getUser() returns is_internal: true when components mount
+ *
  * Authentication Strategy:
- * 1. Real SSO login (creates valid OIDC session)
- * 2. Swap OIDC token with Vault internal user token
+ * 1. Global-setup performs SSO login with E2E_USER/E2E_PASSWORD
+ * 2. This test gets the token from localStorage (set by global-setup)
  * 3. Override chrome.auth.getUser() to return is_internal: true
+ * 4. Test the TAM workflow which is now accessible
  *
- * Why the override is needed:
- * - Vault JWT has is_internal: false in claims
- * - 3scale injects is_internal: true only in API responses
- * - Frontend reads chrome.auth.getUser() which reads JWT claims directly
- * - We override before React components mount and cache the user
- *
- * See DEVELOPER_GUIDE_CHROME_AUTH_OVERRIDE.md for technical details.
+ * See E2E_TESTING_README.md for more details on why this cannot be simplified.
  */
 
 //=============================================================================
@@ -273,6 +291,11 @@ test.describe('TAM Invite - E2E Workflow', () => {
 
       //=======================================================================
       // Step 2: Swap OIDC Token with is_internal override
+      //
+      // ⚠️  WARNING: DO NOT REMOVE THIS SECTION! ⚠️
+      // This token swap is REQUIRED for TAM invite workflow to work.
+      // Without is_internal: true, the TAM invite button is not visible.
+      // See file header comments for detailed explanation.
       //=======================================================================
 
       console.log('\n🔄 Step 2: Applying is_internal override to OIDC session');
