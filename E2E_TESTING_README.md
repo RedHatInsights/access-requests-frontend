@@ -1,213 +1,176 @@
 # E2E Testing for Access Requests Frontend
 
-E2E testing infrastructure using Playwright with environment variable-based authentication (adapted from the 3scale-interaction proof of concept).
+End-to-end testing using Playwright with environment variable-based authentication.
 
-## Authentication Approach
+## Overview
 
-The tests authenticate using **E2E_USER and E2E_PASSWORD** environment variables instead of Vault:
-- **Locally**: Set environment variables manually
-- **CI**: Provided by ExternalSecret (Konflux pipeline)
+The E2E tests authenticate using real Red Hat SSO login with credentials provided via environment variables:
+- **Locally**: Set `E2E_USER` and `E2E_PASSWORD` manually
+- **CI**: Provided by ExternalSecret in Konflux pipeline
 
-This approach eliminates the VPN requirement and works in both local and CI environments.
+## Quick Start
 
-### Testing Internal-Only Features ⚠️
+### Running Tests Locally
 
-**Use the Internal User Fixture for Internal-Only Features**
+1. **Prerequisites**
+   - Connected to Red Hat VPN (tests use squid proxy)
+   - Valid Red Hat credentials
 
-Some features like TAM (Technical Account Manager) invites are **internal-user-only**:
-- The "Create request" button only appears when `is_internal: true`
-- Backend APIs reject requests without this flag
-- JWT tokens from SSO have `is_internal: false` even for internal users
+2. **Set environment variables**
+   ```bash
+   export E2E_USER=your-redhat-username
+   export E2E_PASSWORD=your-password
+   ```
 
-**The Solution - Reusable Fixture:**
+3. **Run tests**
+   ```bash
+   npx playwright test
+   ```
+
+See **[E2E_TESTING_LOCAL.md](E2E_TESTING_LOCAL.md)** for detailed local testing guide.
+
+## Testing Internal-Only Features
+
+**IMPORTANT:** Some features like TAM (Technical Account Manager) invites require `is_internal: true` to work.
+
+### The Internal User Fixture
 
 Use `playwright/fixtures/internal-user-fixture.ts` for tests needing internal access:
 
 ```typescript
 import { test, expect } from '../fixtures/internal-user-fixture';
 
-test('my internal feature test', async ({ internalUserPage }) => {
+test('TAM invite workflow', async ({ internalUserPage }) => {
   // internalUserPage has is_internal: true already set
   await internalUserPage.goto('/iam/my-user-access');
-  // TAM invite button is now visible!
+  // Internal-only features are now visible!
 });
 ```
 
+**Why This is Needed:**
+- JWT tokens from SSO have `is_internal: false` even for internal users
+- The 3scale API gateway injects `is_internal: true` in API responses
+- BUT the frontend reads `chrome.auth.getUser()` which reads JWT claims directly
+- React components cache this user object before API calls complete
+
 **What the Fixture Does:**
-1. Creates browser context with `chrome.auth.getUser()` override
-2. Gets authenticated token from global-setup
-3. Swaps OIDC token and sets `profile.is_internal: true`
+1. Performs SSO login and extracts the JWT token
+2. Swaps the OIDC token to set `profile.is_internal: true`
+3. Uses a TWO-LAYER override to ensure `is_internal: true` persists:
+   - Layer 1: `Storage.prototype.getItem` - intercepts localStorage reads
+   - Layer 2: `chrome.auth.getUser()` - wraps the function directly
 4. Returns a page ready to test internal-only features
 
-**Important:** Do NOT remove this fixture - it's essential for testing internal-only features. See the fixture file for detailed technical explanation.
+**⚠️ DO NOT REMOVE THIS FIXTURE** - It's essential for testing internal-only features.
 
-## Quick Links
+See `playwright/fixtures/internal-user-fixture.ts` for detailed technical explanation.
 
-- **[E2E_TESTING_SETUP.md](E2E_TESTING_SETUP.md)** - Complete setup guide, adaptation instructions, troubleshooting
-- **[TEKTON_PIPELINE_SETUP.md](TEKTON_PIPELINE_SETUP.md)** - CI/CD pipeline configuration and setup
+## Architecture
 
-## What Was Added
-
-### Test Infrastructure
+### Test Files
 ```
 playwright/
 ├── e2e/
-│   ├── tam-invite-hybrid.spec.ts    # TAM invite E2E test (9 steps)
-│   └── internal-user.spec.ts        # Internal user validation
-├── setup/global-setup.ts            # Environment variable authentication
-├── fixtures/auth-fixture.ts          # Auth fixture (restores sessionStorage)
-├── types/window.d.ts                # TypeScript definitions
-└── tsconfig.json                    # Playwright TypeScript config
-```
-
-### Helper Scripts
-```
-bin/
-├── run_tam_invite_test.sh          # Auto-auth test runner
-└── load_internal_user_token.sh     # Manual token retrieval
+│   └── tam-invite-hybrid.spec.ts    # TAM invite E2E test
+├── setup/
+│   └── global-setup.ts              # SSO authentication
+├── fixtures/
+│   └── internal-user-fixture.ts     # Internal user access
+├── types/
+│   └── window.d.ts                  # TypeScript definitions
+└── tsconfig.json                    # Playwright config
 ```
 
 ### Configuration
 - `playwright.config.ts` - Playwright configuration
-- `.tekton/access-requests-frontend-pull-request-with-e2e.yaml` - CI/CD pipeline with E2E
+- `.tekton/access-requests-frontend-pull-request.yaml` - CI/CD pipeline
 
-### Dependencies (added to package.json)
-- `@playwright/test: ^1.40.0`
+### Dependencies
+- `@playwright/test: ^1.61.1`
 - `@types/node: ^20.10.0`
+- `@redhat-cloud-services/playwright-test-auth` - Cookie consent handling
 
-## Quick Start
-
-### Local Testing
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Set environment variables (get credentials from your team)
-export E2E_USER=your-username
-export E2E_PASSWORD=your-password
-
-# 3. Run the tests
-npx playwright test
-```
-
-**Important for Local Development:**
-- Tests require the Red Hat VPN and proxy (`http://squid.corp.redhat.com:3128`)
-- The proxy is automatically configured for local runs (when `CI` env var is not set)
-- In CI, the proxy is disabled and not needed
-
-### CI/CD Integration
-
-See [TEKTON_PIPELINE_SETUP.md](TEKTON_PIPELINE_SETUP.md) for complete instructions.
-
-Required steps:
-1. Create Vault credentials secret
-2. Create Caddy proxy ConfigMap
-3. Activate the new pipeline
-
-## How It Works
-
-The test uses a **real SSO login flow** to achieve `is_internal: true`:
-
-1. **SSO Login** - Authenticates via Red Hat SSO using E2E_USER/E2E_PASSWORD
-2. **Kerberos Auth** - Handles internal SSO page for employee authentication
-3. **Token Extraction** - Extracts JWT token from authenticated session
-4. **OIDC State Injection** - Sets up react-oidc-context state in sessionStorage
-5. **Cookie Setup** - Sets `cs_jwt` cookie with proper domain/path for API access
+## How Authentication Works
 
 ### Global Setup Flow
 
-The `global-setup.ts` performs these steps once before all tests:
+The `playwright/setup/global-setup.ts` performs real SSO login once before all tests:
 
 1. Navigate to Red Hat SSO login page
-2. Fill username and handle email modal
+2. Fill username and handle email modal if present
 3. Fill password and submit
-4. Handle internal Kerberos SSO page (fills same credentials)
+4. Handle internal Kerberos SSO page (fills same credentials again)
 5. Extract `cs_jwt` token from OAuth callback
 6. Create new browser context with token preset
-7. Inject OIDC state into localStorage and sessionStorage
+7. Inject OIDC state into sessionStorage for react-oidc-context
 8. Verify authentication via identity API
-9. Save authenticated state to `.auth/internal-user.json` and `.auth/internal-user-session.json`
+9. Save authenticated state to `.auth/internal-user.json`
 
-### Screenshots for Debugging
+Duration: ~30-45 seconds for initial setup, then cached for subsequent runs.
 
-The global-setup captures screenshots at each step:
-- `setup-01-login-page.png` - Initial login page
-- `setup-02b-after-modal.png` - After email modal dismissed
-- `setup-03-before-submit.png` - Before password submit
-- `setup-04-after-submit.png` - After initial submit
-- `setup-05-kerberos-filled.png` - Kerberos credentials filled
-- `setup-06-after-kerberos-submit.png` - After Kerberos submit
-- `setup-07-after-oauth-callback.png` - OAuth callback processed
-- `setup-error-final.png` - On any error
+### Cookie Configuration
 
-Duration: ~30-45 seconds for initial setup, then cached for subsequent runs
-
-## Adaptation Needed
-
-The test may need adaptation for your UI. See [E2E_TESTING_SETUP.md](E2E_TESTING_SETUP.md) for details on:
-
-1. **Navigation Selectors** - Update if your nav structure differs
-2. **Form Fields** - Adapt selectors to match your form
-3. **Base URL** - Currently `https://console.stage.redhat.com`
-4. **Organization ID** - Default `1178977`, configurable via `TAM_INVITE_ORG_ID`
-
-## Test Modes
-
-```bash
-bash bin/run_tam_invite_test.sh --headed    # Visible browser (default)
-bash bin/run_tam_invite_test.sh --headless  # Background (CI)
-bash bin/run_tam_invite_test.sh --debug     # Step-by-step debugging
-bash bin/run_tam_invite_test.sh --ui        # Interactive test explorer
+The `cs_jwt` cookie must be set with specific configuration:
+```javascript
+{
+  domain: '.stage.redhat.com',  // Leading dot for all subdomains
+  path: '/',                     // Root path for all API endpoints
+  secure: true,
+  sameSite: 'None'
+}
 ```
+
+## CI/CD Integration
+
+The E2E tests run in the Konflux pipeline:
+
+1. **Credentials**: Provided by ExternalSecret (`access-requests-frontend-credentials-secret`)
+2. **Environment**: stage.foo.redhat.com (no VPN/proxy needed)
+3. **Sidecars**: 
+   - `run-application` - Serves the built app with Caddy
+   - `frontend-dev-proxy` - Proxies to stage environment
+
+See `.tekton/access-requests-frontend-pull-request.yaml` for pipeline configuration.
+
+## Environment Differences
+
+| Aspect | Local | CI (Konflux) |
+|--------|-------|--------------|
+| Proxy | squid.corp.redhat.com:3128 | None |
+| VPN | Required | Not needed |
+| BASE_URL | console.stage.redhat.com | stage.foo.redhat.com:1337 |
+| Credentials | Manual env vars | ExternalSecret |
+| Parallelization | Yes (faster) | No (1 worker) |
 
 ## Troubleshooting
 
 ### Common Issues
 
-**"Vault token expired"**
-- Run: `vault login -method=oidc`
+**"cs_jwt token not found"**
+- Global-setup authentication failed
+- Check E2E_USER and E2E_PASSWORD are set correctly
+- Run with `--headed` to see what's happening
 
-**"Button not found"**
-- Check navigation selectors match your UI
-- Verify override fired (check screenshots in test-results/)
+**"ERR_PROXY_CONNECTION_FAILED"**
+- Not on Red Hat VPN
+- Connect to VPN and try again
 
-**"Modal not found"**
-- Update modal selector if PatternFly version differs
+**"Password field not found"**
+- SSO page structure may have changed
+- Check error screenshot: `playwright/test-results/setup-error-password-not-found.png`
 
-See [E2E_TESTING_SETUP.md](E2E_TESTING_SETUP.md) for complete troubleshooting guide.
+### Error Screenshots
 
-## Documentation Structure
-
-```
-.
-├── E2E_TESTING_README.md (this file)    # Overview and quick start
-├── E2E_TESTING_SETUP.md                 # Complete setup and adaptation guide
-└── TEKTON_PIPELINE_SETUP.md             # CI/CD pipeline configuration
-```
-
-## Next Steps
-
-1. **Install and test locally**
-   ```bash
-   npm install
-   bash bin/run_tam_invite_test.sh
-   ```
-
-2. **Adapt selectors** to match your UI (see E2E_TESTING_SETUP.md)
-
-3. **Set up CI/CD** (see TEKTON_PIPELINE_SETUP.md)
-
-4. **Add more tests** as needed
+Global setup captures error screenshots for debugging:
+- `setup-error-password-not-found.png` - Password field not found
+- `setup-error-final.png` - Any other setup error
 
 ## Resources
 
-- [Original Investigation Repo](https://gitlab.cee.redhat.com/btweed/internal-flag-investigation)
-- [Playwright Documentation](https://playwright.dev/docs/intro)
-- [Frontend Starter App Example](https://github.com/RedHatInsights/frontend-starter-app)
+- **[E2E_TESTING_LOCAL.md](E2E_TESTING_LOCAL.md)** - Local testing guide
+- **[Playwright Documentation](https://playwright.dev/docs/intro)** - Official Playwright docs
+- **[playwright/fixtures/internal-user-fixture.ts](playwright/fixtures/internal-user-fixture.ts)** - Internal user implementation details
 
 ---
 
-**Status**: Ready for adaptation
-**Source**: 3scale-interaction investigation project
-**Last Updated**: 2026-07-01
+**Last Updated**: 2026-07-08

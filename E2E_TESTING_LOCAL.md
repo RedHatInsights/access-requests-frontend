@@ -18,18 +18,10 @@ Quick guide for running E2E tests on your local machine instead of waiting for C
 npx playwright test
 ```
 
-### Run Specific Test File
+### Run Specific Test
 ```bash
-# Internal user tests (fast - ~30 seconds)
-npx playwright test playwright/e2e/internal-user.spec.ts
-
-# TAM invite test (slower - ~2-3 minutes)
+# TAM invite test (~1-2 minutes)
 npx playwright test playwright/e2e/tam-invite-hybrid.spec.ts
-```
-
-### Run Single Test
-```bash
-npx playwright test -g "should verify is_internal flag"
 ```
 
 ### Run with UI (Debug Mode)
@@ -64,15 +56,15 @@ npx playwright test --ui
 ### "Password field not found"
 - SSO page structure may have changed
 - Run with `--headed` to see the page
-- Check `playwright/test-results/setup-*.png` screenshots
+- Check `playwright/test-results/setup-error-password-not-found.png` screenshot
 
 ### View Screenshots on Failure
 ```bash
 # Screenshots are saved to:
 ls playwright/test-results/
 
-# For global-setup failures:
-ls playwright/test-results/setup-*.png
+# Error screenshots from global-setup:
+ls playwright/test-results/setup-error-*.png
 ```
 
 ### View Test Report
@@ -86,13 +78,13 @@ For fastest iteration when fixing tests:
 
 ```bash
 # 1. Run just the test you're fixing
-npx playwright test playwright/e2e/internal-user.spec.ts -g "should verify is_internal"
+npx playwright test playwright/e2e/tam-invite-hybrid.spec.ts
 
 # 2. Use headed mode to see what's happening
-npx playwright test --headed -g "your test name"
+npx playwright test --headed
 
 # 3. Use debug mode to pause and inspect
-npx playwright test --debug -g "your test name"
+npx playwright test --debug
 ```
 
 ## CI vs Local Differences
@@ -114,12 +106,6 @@ rm -rf playwright/.auth/
 npx playwright test
 ```
 
-### Testing Just Authentication
-```bash
-# Run just one simple test to verify auth works
-npx playwright test -g "should verify is_internal flag"
-```
-
 ### Debugging TAM Invite Test
 ```bash
 # Run in headed mode to see the full workflow
@@ -134,7 +120,6 @@ npx playwright test playwright/e2e/tam-invite-hybrid.spec.ts --ui
 - **Headed mode** (`--headed`): See the browser - great for debugging
 - **UI mode** (`--ui`): Interactive debugging with time-travel
 - **Debug mode** (`--debug`): Pause execution and step through
-- **Grep** (`-g "pattern"`): Run tests matching pattern
 - **Screenshot dir**: `playwright/test-results/` has failure screenshots
 - **Trace viewer**: `npx playwright show-trace <trace.zip>` for detailed debugging
 
@@ -147,7 +132,7 @@ When using `--debug`, you get the Playwright Inspector:
 - Take screenshots at any point
 
 ```bash
-npx playwright test --debug -g "your test"
+npx playwright test --debug
 ```
 
 Happy testing! 🎭
