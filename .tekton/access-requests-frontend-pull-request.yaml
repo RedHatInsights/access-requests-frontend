@@ -53,34 +53,10 @@ spec:
   - name: run-app-script
     value: |
       #!/bin/sh
-      set -ex
+      set -e
 
-      echo "=== Caddy Configuration Check ==="
-      if [ -f /etc/caddy/Caddyfile ]; then
-        echo "Caddyfile exists at /etc/caddy/Caddyfile"
-        echo "=== Caddyfile Contents ==="
-        cat /etc/caddy/Caddyfile
-      else
-        echo "ERROR: Caddyfile not found at /etc/caddy/Caddyfile"
-        exit 1
-      fi
-
-      echo ""
-      echo "=== Starting Caddy in background ==="
-      caddy run --config /etc/caddy/Caddyfile &
-      CADDY_PID=$!
-
-      echo "Caddy started with PID: $CADDY_PID"
-      echo "Waiting for Caddy to be ready..."
-      sleep 3
-
-      echo ""
-      echo "=== Testing root path (/) with verbose curl ==="
-      curl -v -w "\nHTTP Status: %{http_code}\n" http://127.0.0.1:8000/ 2>&1 || echo "Curl failed with exit code: $?"
-
-      echo ""
-      echo "=== Caddy is ready, bringing to foreground ==="
-      wait $CADDY_PID
+      echo "Starting application with Caddy..."
+      exec caddy run --config /etc/caddy/Caddyfile
   - name: e2e-tests-script
     value: |
       #!/bin/bash
@@ -128,7 +104,6 @@ spec:
               - "stage.foo.redhat.com"
       sidecarSpecs:
         - name: run-application
-          restartPolicy: Never
           computeResources:
             requests:
               cpu: "500m"
@@ -137,7 +112,6 @@ spec:
               cpu: "1000m"
               memory: "1Gi"
         - name: frontend-dev-proxy
-          restartPolicy: Never
           computeResources:
             requests:
               cpu: "500m"
