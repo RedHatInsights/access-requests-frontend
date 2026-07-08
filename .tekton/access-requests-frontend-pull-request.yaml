@@ -34,7 +34,7 @@ spec:
   - name: rebuild
     value: "true"
   - name: e2e-app-port
-    value: "8000"
+    value: "1337"
   - name: e2e-playwright-image
     value: mcr.microsoft.com/playwright:v1.61.1-noble
   - name: workspace-setup-script
