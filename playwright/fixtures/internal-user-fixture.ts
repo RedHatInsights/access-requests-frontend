@@ -98,7 +98,10 @@ function createChromeAuthOverride() {
             return JSON.stringify(data);
           }
         } catch (e) {
-          // Ignore parse errors
+          // If OIDC data is malformed, return original value unchanged
+          // This prevents breaking the app if localStorage is corrupted
+          console.warn('Failed to parse OIDC user data from localStorage:', e);
+          return value;
         }
       }
       return value;
