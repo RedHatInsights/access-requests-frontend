@@ -14,6 +14,67 @@ import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth
  * - E2E_USER and E2E_PASSWORD environment variables (provided by ExternalSecret in CI)
  */
 
+/**
+ * Configuration constants
+ */
+const SSO_CONFIG = {
+  console: {
+    url: 'https://console.stage.redhat.com',
+    ssoUrl: 'https://sso.stage.redhat.com/auth/realms/redhat-external/protocol/openid-connect/auth',
+    cookieDomain: '.stage.redhat.com',
+  },
+  proxy: {
+    server: 'http://squid.corp.redhat.com:3128',
+  },
+  oidc: {
+    clientId: 'cloud-services',
+    responseType: 'code',
+    scope: 'openid',
+  },
+  timeouts: {
+    pageLoad: 60_000,
+    networkIdle: 30_000,
+    networkIdleShort: 10_000,
+    ssoStage: 5_000,
+    passwordFieldWait: 10_000,
+    modalVisibility: 2_000,
+    modalDismiss: 1_000,
+    stateStabilization: 2_000,
+  },
+} as const;
+
+/**
+ * SSO Selectors
+ */
+const SSO_SELECTORS = {
+  usernameInput: 'input[name="username"]',
+  passwordInput: 'input[name="password"]',
+  passwordInputAlt: 'input[type="password"]',
+  submitButton: 'input[type="submit"]',
+  nextButton: 'button:has-text("Next"), button:has-text("Continue")',
+  closeButton: 'button[aria-label="Close"], button:has-text("Close")',
+  internalSsoHeading: 'text="Internal single sign-on"',
+  kerberosUsernameInput: 'input[name="username"], input[placeholder*="Kerberos"]',
+  kerberosPasswordInput: 'input[name="password"][type="password"]',
+  kerberosSubmitButton: 'button:has-text("Log in to SSO"), input[value="Log in to SSO"], input[type="submit"]',
+} as const;
+
+/**
+ * Screenshot paths
+ */
+const SCREENSHOT_PATHS = {
+  loginPage: 'playwright/test-results/setup-01-login-page.png',
+  afterUsername: 'playwright/test-results/setup-02-after-username.png',
+  afterModal: 'playwright/test-results/setup-02b-after-modal.png',
+  passwordNotFound: 'playwright/test-results/setup-error-password-not-found.png',
+  beforeSubmit: 'playwright/test-results/setup-03-before-submit.png',
+  afterSubmit: 'playwright/test-results/setup-04-after-submit.png',
+  kerberosFilled: 'playwright/test-results/setup-05-kerberos-filled.png',
+  afterKerberos: 'playwright/test-results/setup-06-after-kerberos-submit.png',
+  afterOAuth: 'playwright/test-results/setup-07-after-oauth-callback.png',
+  errorFinal: 'playwright/test-results/setup-error-final.png',
+} as const;
+
 async function globalSetup(config: FullConfig) {
   const { storageState, baseURL } = config.projects[0].use;
 
@@ -46,9 +107,7 @@ async function globalSetup(config: FullConfig) {
   };
 
   if (!process.env.CI) {
-    contextOptions.proxy = {
-      server: 'http://squid.corp.redhat.com:3128'
-    };
+    contextOptions.proxy = SSO_CONFIG.proxy;
     console.log('Using proxy for local development');
   } else {
     console.log('Running in CI - proxy disabled');
@@ -64,57 +123,53 @@ async function globalSetup(config: FullConfig) {
   // Perform login to get authenticated token
   try {
     // Navigate to login
-    const loginUrl = 'https://sso.stage.redhat.com/auth/realms/redhat-external/protocol/openid-connect/auth';
     const params = new URLSearchParams({
-      client_id: 'cloud-services',
-      redirect_uri: baseURL || 'https://console.stage.redhat.com',
-      response_type: 'code',
-      scope: 'openid',
+      client_id: SSO_CONFIG.oidc.clientId,
+      redirect_uri: baseURL || SSO_CONFIG.console.url,
+      response_type: SSO_CONFIG.oidc.responseType,
+      scope: SSO_CONFIG.oidc.scope,
     });
 
-    await page.goto(`${loginUrl}?${params.toString()}`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.goto(`${SSO_CONFIG.console.ssoUrl}?${params.toString()}`, { waitUntil: 'domcontentloaded', timeout: SSO_CONFIG.timeouts.pageLoad });
     console.log('✓ Navigated to login page');
 
     // Take screenshot after initial page load
-    await page.screenshot({ path: 'playwright/test-results/setup-01-login-page.png', fullPage: true });
 
     // Fill in login form
-    await page.fill('input[name="username"]', username);
+    await page.fill(SSO_SELECTORS.usernameInput, username);
     console.log('✓ Filled username');
 
     // Click next/continue after username (if there's a separate step)
-    const nextButton = page.locator('input[type="submit"]').first();
+    const nextButton = page.locator(SSO_SELECTORS.submitButton).first();
     if (await nextButton.isVisible()) {
       await nextButton.click();
       console.log('✓ Clicked next button');
-      await page.screenshot({ path: 'playwright/test-results/setup-02-after-username.png', fullPage: true });
     }
 
     // Handle any modal/popup that might appear (e.g., "Link your email address")
     // Wait a moment for any modal to appear
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(SSO_CONFIG.timeouts.modalDismiss);
 
     // Look for modal close button or "Next" button in modal
-    const modalNextButton = page.locator('button:has-text("Next"), button:has-text("Continue")');
-    if (await modalNextButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    const modalNextButton = page.locator(SSO_SELECTORS.nextButton);
+    if (await modalNextButton.isVisible({ timeout: SSO_CONFIG.timeouts.modalVisibility }).catch(() => false)) {
       console.log('✓ Found modal, clicking to dismiss');
       await modalNextButton.click();
-      await page.screenshot({ path: 'playwright/test-results/setup-02b-after-modal.png', fullPage: true });
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(SSO_CONFIG.timeouts.modalDismiss);
     }
 
     // Wait for password field to be visible and fill it
     console.log('Waiting for password field...');
 
     // Try multiple strategies to find the password field
-    const passwordField = page.locator('input[name="password"]').or(page.locator('input[type="password"]')).first();
+    const passwordField = page.locator(SSO_SELECTORS.passwordInput).or(page.locator(SSO_SELECTORS.passwordInputAlt)).first();
 
     try {
-      await passwordField.waitFor({ state: 'visible', timeout: 10000 });
+      await passwordField.waitFor({ state: 'visible', timeout: SSO_CONFIG.timeouts.passwordFieldWait });
       console.log('✓ Password field visible');
     } catch (err) {
       // Take screenshot to debug what's on the page
-      await page.screenshot({ path: 'playwright/test-results/setup-error-password-not-found.png', fullPage: true });
+      await page.screenshot({ path: SCREENSHOT_PATHS.passwordNotFound, fullPage: true });
 
       // Log page content for debugging
       const pageContent = await page.content();
@@ -136,31 +191,29 @@ async function globalSetup(config: FullConfig) {
     await passwordField.fill(password);
     console.log('✓ Filled password');
 
-    await page.screenshot({ path: 'playwright/test-results/setup-03-before-submit.png', fullPage: true });
 
-    await page.click('input[type="submit"]');
+    await page.click(SSO_SELECTORS.submitButton);
     console.log('✓ Clicked submit');
 
     // Wait for any page transition
-    await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
-    await page.screenshot({ path: 'playwright/test-results/setup-04-after-submit.png', fullPage: true });
+    await page.waitForLoadState('domcontentloaded', { timeout: SSO_CONFIG.timeouts.networkIdle });
 
     // Check if we landed on an internal SSO page
-    const internalSsoHeading = page.locator('text="Internal single sign-on"');
-    if (await internalSsoHeading.isVisible({ timeout: 5000 }).catch(() => false)) {
+    const internalSsoHeading = page.locator(SSO_SELECTORS.internalSsoHeading);
+    if (await internalSsoHeading.isVisible({ timeout: SSO_CONFIG.timeouts.ssoStage }).catch(() => false)) {
       console.log('✓ Found internal SSO page');
 
       // Dismiss any modals that might be blocking
-      const closeModalButton = page.locator('button[aria-label="Close"], button:has-text("Close")');
-      if (await closeModalButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      const closeModalButton = page.locator(SSO_SELECTORS.closeButton);
+      if (await closeModalButton.isVisible({ timeout: SSO_CONFIG.timeouts.modalVisibility }).catch(() => false)) {
         await closeModalButton.click();
         console.log('✓ Closed modal');
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(SSO_CONFIG.timeouts.modalDismiss);
       }
 
       // Fill in Kerberos credentials (same as E2E_USER and E2E_PASSWORD)
-      const kerberosUsernameField = page.locator('input[name="username"], input[placeholder*="Kerberos"]').first();
-      const kerberosPasswordField = page.locator('input[name="password"][type="password"]').first();
+      const kerberosUsernameField = page.locator(SSO_SELECTORS.kerberosUsernameInput).first();
+      const kerberosPasswordField = page.locator(SSO_SELECTORS.kerberosPasswordInput).first();
 
       await kerberosUsernameField.clear();
       await kerberosUsernameField.fill(username);
@@ -170,26 +223,23 @@ async function globalSetup(config: FullConfig) {
       await kerberosPasswordField.fill(password);
       console.log('✓ Filled Kerberos password');
 
-      await page.screenshot({ path: 'playwright/test-results/setup-05-kerberos-filled.png', fullPage: true });
 
       // Click the "Log in to SSO" button (could be button or input)
-      const loginButton = page.locator('button:has-text("Log in to SSO"), input[value="Log in to SSO"], input[type="submit"]').first();
+      const loginButton = page.locator(SSO_SELECTORS.kerberosSubmitButton).first();
       await loginButton.click();
       console.log('✓ Clicked Kerberos login button');
 
-      await page.screenshot({ path: 'playwright/test-results/setup-06-after-kerberos-submit.png', fullPage: true });
     }
 
     // Wait for redirect to redhat.com domain
-    await page.waitForURL((url) => url.hostname.includes('redhat.com'), { timeout: 30000 });
+    await page.waitForURL((url) => url.hostname.includes('redhat.com'), { timeout: SSO_CONFIG.timeouts.networkIdle });
     console.log('✓ Redirected to:', page.url());
 
     // Wait for the page to process the OAuth callback and set cookies
     // The OAuth code needs to be exchanged for tokens, which may take a moment
-    await page.waitForLoadState('networkidle', { timeout: 30000 });
+    await page.waitForLoadState('networkidle', { timeout: SSO_CONFIG.timeouts.networkIdle });
     console.log('✓ Network idle, checking for cookies');
 
-    await page.screenshot({ path: 'playwright/test-results/setup-07-after-oauth-callback.png', fullPage: true });
 
     // Extract the cs_jwt token from cookies
     const cookies = await context.cookies();
@@ -242,7 +292,7 @@ async function globalSetup(config: FullConfig) {
     const authPage = await authContext.newPage();
 
     // Now navigate to the app with the cookie already set
-    await authPage.goto(baseURL || 'https://console.stage.redhat.com', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await authPage.goto(baseURL || SSO_CONFIG.console.url, { waitUntil: 'domcontentloaded', timeout: SSO_CONFIG.timeouts.pageLoad });
     console.log('✓ Navigated to console with auth cookie');
 
     // Decode token to get claims
@@ -297,7 +347,7 @@ async function globalSetup(config: FullConfig) {
     console.log('✓ Page reloaded with OIDC state');
 
     // Wait for any post-reload navigation to complete
-    await authPage.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {
+    await authPage.waitForLoadState('networkidle', { timeout: SSO_CONFIG.timeouts.networkIdleShort }).catch(() => {
       // Ignore timeout - page might not reach networkidle
     });
 
@@ -322,7 +372,7 @@ async function globalSetup(config: FullConfig) {
 
     // Wait for page to stabilize before reading sessionStorage
     // This prevents "execution context destroyed" errors from post-reload navigation
-    await authPage.waitForTimeout(2000);
+    await authPage.waitForTimeout(SSO_CONFIG.timeouts.stateStabilization);
 
     // Get sessionStorage data (needed for OIDC library)
     const sessionStorageData = await authPage.evaluate(() => {
@@ -355,16 +405,16 @@ async function globalSetup(config: FullConfig) {
     try {
       if (typeof authPage !== 'undefined') {
         await authPage.screenshot({
-          path: 'playwright/test-results/setup-error-final.png',
+          path: SCREENSHOT_PATHS.errorFinal,
           fullPage: true
         });
       } else if (typeof page !== 'undefined') {
         await page.screenshot({
-          path: 'playwright/test-results/setup-error-final.png',
+          path: SCREENSHOT_PATHS.errorFinal,
           fullPage: true
         });
       }
-      console.log('✓ Error screenshot saved to playwright/test-results/setup-error-final.png');
+      console.log(`✓ Error screenshot saved to ${SCREENSHOT_PATHS.errorFinal}`);
     } catch (screenshotError) {
       console.error('Failed to capture error screenshot:', screenshotError);
     }
