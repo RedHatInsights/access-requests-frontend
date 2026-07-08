@@ -72,22 +72,23 @@ type InternalUserFixtures = {
 };
 
 /**
- * Creates the chrome.auth.getUser() override script.
- * This forces is_internal: true in the user profile.
+ * Chrome auth override script that forces is_internal: true.
  *
  * TWO-LAYER APPROACH (from 3scale-interaction PoC):
- * Layer 1: Intercept localStorage.getItem() to inject is_internal: true on every read
- * Layer 2: Override chrome.auth.getUser() to inject is_internal: true
+ * - Layer 1: Intercept localStorage.getItem() to inject is_internal: true on every read
+ * - Layer 2: Override chrome.auth.getUser() to inject is_internal: true
  *
  * Layer 1 is critical - it ensures the override persists across page navigations
  * and component re-renders, since every localStorage read gets the override.
+ *
+ * Note: This must be a function (not a string) so Playwright can serialize it properly.
+ * The function will be evaluated in the browser context where Storage, window, etc. exist.
  */
 function createChromeAuthOverride() {
-  return `
+  return () => {
     // Layer 1: Override localStorage reads to inject is_internal: true
-    // This is the "work-around" to repeatedly ensure the session stays in place
     const originalGetItem = Storage.prototype.getItem;
-    Storage.prototype.getItem = function(key) {
+    Storage.prototype.getItem = function(key: string) {
       const value = originalGetItem.call(this, key);
       if (key.startsWith('oidc.user:') && value) {
         try {
@@ -108,11 +109,11 @@ function createChromeAuthOverride() {
     const POLL_TIMEOUT = 30_000;
 
     const checkInterval = setInterval(() => {
-      if (window.insights?.chrome?.auth?.getUser) {
+      if ((window as any).insights?.chrome?.auth?.getUser) {
         clearInterval(checkInterval);
 
-        const originalGetUser = window.insights.chrome.auth.getUser;
-        window.insights.chrome.auth.getUser = async function() {
+        const originalGetUser = (window as any).insights.chrome.auth.getUser;
+        (window as any).insights.chrome.auth.getUser = async function() {
           const user = await originalGetUser.call(this);
           if (user?.identity?.user) {
             user.identity.user.is_internal = true;
@@ -123,7 +124,7 @@ function createChromeAuthOverride() {
     }, POLL_INTERVAL);
 
     setTimeout(() => clearInterval(checkInterval), POLL_TIMEOUT);
-  `;
+  };
 }
 
 /**
