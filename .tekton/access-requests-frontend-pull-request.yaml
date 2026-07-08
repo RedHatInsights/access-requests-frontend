@@ -128,6 +128,7 @@ spec:
               - "stage.foo.redhat.com"
       sidecarSpecs:
         - name: run-application
+          restartPolicy: Never
           computeResources:
             requests:
               cpu: "500m"
@@ -136,6 +137,7 @@ spec:
               cpu: "1000m"
               memory: "1Gi"
         - name: frontend-dev-proxy
+          restartPolicy: Never
           computeResources:
             requests:
               cpu: "500m"
