@@ -296,6 +296,11 @@ async function globalSetup(config: FullConfig) {
     await authPage.reload({ waitUntil: 'domcontentloaded' });
     console.log('✓ Page reloaded with OIDC state');
 
+    // Wait for any post-reload navigation to complete
+    await authPage.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {
+      // Ignore timeout - page might not reach networkidle
+    });
+
     // Verify authentication by checking identity endpoint (like the POC does)
     const response = await authPage.request.get(
       'https://console.stage.redhat.com/api/apicast-tests/identity'
@@ -314,6 +319,10 @@ async function globalSetup(config: FullConfig) {
     console.log('✓ Internal user authenticated:', identity.identity.user.username);
     console.log('✓ is_internal:', identity.identity.user.is_internal);
     console.log('✓ Org ID:', identity.identity.org_id);
+
+    // Wait for page to stabilize before reading sessionStorage
+    // This prevents "execution context destroyed" errors from post-reload navigation
+    await authPage.waitForTimeout(2000);
 
     // Get sessionStorage data (needed for OIDC library)
     const sessionStorageData = await authPage.evaluate(() => {
