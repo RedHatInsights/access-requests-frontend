@@ -160,23 +160,7 @@ async function globalSetup(config: FullConfig) {
       await passwordField.waitFor({ state: 'visible', timeout: SSO_CONFIG.timeouts.passwordFieldWait });
       console.log('✓ Password field visible');
     } catch (err) {
-      // Take screenshot to debug what's on the page
       await page.screenshot({ path: SCREENSHOT_PATHS.passwordNotFound, fullPage: true });
-
-      // Log page content for debugging
-      const pageContent = await page.content();
-      console.error('Page HTML (first 2000 chars):', pageContent.substring(0, 2000));
-
-      // Log all input fields
-      const inputs = await page.locator('input').all();
-      console.error('Found input fields:', inputs.length);
-      for (const input of inputs) {
-        const type = await input.getAttribute('type');
-        const name = await input.getAttribute('name');
-        const id = await input.getAttribute('id');
-        console.error(`  - input[type="${type}"][name="${name}"][id="${id}"]`);
-      }
-
       throw err;
     }
 
@@ -235,12 +219,9 @@ async function globalSetup(config: FullConfig) {
 
     // Extract the cs_jwt token from cookies
     const cookies = await context.cookies();
-    console.log('Available cookies:', cookies.map(c => c.name).join(', '));
-
     const csJwtCookie = cookies.find(c => c.name === 'cs_jwt');
 
     if (!csJwtCookie) {
-      console.error('cs_jwt cookie not found. Available cookies:', cookies.map(c => `${c.name}=${c.value.substring(0, 20)}...`));
       throw new Error('cs_jwt cookie not found after login');
     }
 
@@ -260,9 +241,7 @@ async function globalSetup(config: FullConfig) {
     };
 
     if (!process.env.CI) {
-      authContextOptions.proxy = {
-        server: 'http://squid.corp.redhat.com:3128'
-      };
+      authContextOptions.proxy = SSO_CONFIG.proxy;
     }
 
     const authContext = await browser.newContext(authContextOptions);
@@ -271,7 +250,7 @@ async function globalSetup(config: FullConfig) {
     await authContext.addCookies([{
       name: 'cs_jwt',
       value: token,
-      domain: '.stage.redhat.com',
+      domain: SSO_CONFIG.console.cookieDomain,
       path: '/',
       expires: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hour from now
       httpOnly: false,
@@ -279,7 +258,7 @@ async function globalSetup(config: FullConfig) {
       sameSite: 'None'
     }]);
 
-    console.log('✓ Cookie set with domain .stage.redhat.com and path /');
+    console.log(`✓ Cookie set with domain ${SSO_CONFIG.console.cookieDomain} and path /`);
 
     const authPage = await authContext.newPage();
 
