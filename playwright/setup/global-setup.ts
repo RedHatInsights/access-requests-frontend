@@ -63,15 +63,7 @@ const SSO_SELECTORS = {
  * Screenshot paths
  */
 const SCREENSHOT_PATHS = {
-  loginPage: 'playwright/test-results/setup-01-login-page.png',
-  afterUsername: 'playwright/test-results/setup-02-after-username.png',
-  afterModal: 'playwright/test-results/setup-02b-after-modal.png',
   passwordNotFound: 'playwright/test-results/setup-error-password-not-found.png',
-  beforeSubmit: 'playwright/test-results/setup-03-before-submit.png',
-  afterSubmit: 'playwright/test-results/setup-04-after-submit.png',
-  kerberosFilled: 'playwright/test-results/setup-05-kerberos-filled.png',
-  afterKerberos: 'playwright/test-results/setup-06-after-kerberos-submit.png',
-  afterOAuth: 'playwright/test-results/setup-07-after-oauth-callback.png',
   errorFinal: 'playwright/test-results/setup-error-final.png',
 } as const;
 
