@@ -294,7 +294,9 @@ export const LoadingState: Story = {
     onClose: () => console.log('Wizard closed'),
   },
   play: async () => {
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    });
     await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'));
   },
 };
