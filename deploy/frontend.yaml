@@ -27,9 +27,18 @@ objects:
         - id: internal-access
           module: "./RootApp"
           routes:
+          - pathname: "/internal"
           - pathname: "/internal/access-requests"
           - pathname: "/settings/rbac/access-requests"
           - pathname: "/iam/user-access/access-requests"
+      bundleSegments:
+        - segmentId: internal-access-requests
+          bundleId: internal
+          position: 100
+          navItems:
+            - id: accessRequests
+              title: Access Requests
+              href: /internal/access-requests
       navigationSegments:
         - segmentId: iam-access-requests
           navItems:
@@ -37,7 +46,6 @@ objects:
               title: Red Hat Access Requests
               href: /iam/user-access/access-requests
               notifier: chrome.accessRequests.hasUnseen
-        
 
 parameters:
   - name: ENV_NAME
