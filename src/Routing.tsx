@@ -67,6 +67,7 @@ export const Routing = ({ userData }: { userData: UserData }) => {
       )}
       <Routes>
         {renderedRoutes}
+        {/* Catch all unmatched routes */}
         <Route path="*" element={<MissingPage />} />
       </Routes>
     </Suspense>
