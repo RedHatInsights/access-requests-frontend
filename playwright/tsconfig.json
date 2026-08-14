@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    // Module resolution
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+
+    // Enable esModuleInterop for CommonJS modules like 'path'
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    // Type checking
+    "strict": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+
+    // Output
+    "noEmit": true,
+
+    // Type includes
+    "types": ["node"],
+    "typeRoots": ["./types", "../node_modules/@types"]
+  },
+  "include": [
+    "**/*.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "test-results"
+  ]
+}

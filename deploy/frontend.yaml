@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/RedHatInsights/frontend-components/refs/heads/master/packages/config-utils/src/feo/spec/frontend-crd.schema.json
+
+apiVersion: v1
+kind: Template
+metadata:
+  name: access-requests
+objects:
+  - apiVersion: cloud.redhat.com/v1alpha1
+    kind: Frontend
+    metadata:
+      name: access-requests
+    spec:
+      feoConfigEnabled: true
+      envName: ${ENV_NAME}
+      title: Access request
+      deploymentRepo: https://github.com/RedHatInsights/access-requests
+      API:
+        versions:
+          - v1
+      frontend:
+        paths:
+          - /apps/access-requests
+      image: ${IMAGE}:${IMAGE_TAG}
+      module:
+        manifestLocation: "/apps/access-requests/fed-mods.json"
+        modules:
+        - id: internal-access
+          module: "./RootApp"
+          routes:
+          - pathname: "/internal"
+          - pathname: "/internal/access-requests"
+          - pathname: "/settings/rbac/access-requests"
+          - pathname: "/iam/user-access/access-requests"
+      bundleSegments:
+        - segmentId: internal-access-requests
+          bundleId: internal
+          position: 100
+          navItems:
+            - id: accessRequests
+              title: Access Requests
+              href: /internal/access-requests
+      navigationSegments:
+        - segmentId: iam-access-requests
+          navItems:
+            - id: accessRequests
+              title: Red Hat Access Requests
+              href: /iam/user-access/access-requests
+              notifier: chrome.accessRequests.hasUnseen
+
+parameters:
+  - name: ENV_NAME
+    required: true
+  - name: IMAGE_TAG
+    required: true
+  - name: IMAGE
+    value: quay.io/cloudservices/access-requests
