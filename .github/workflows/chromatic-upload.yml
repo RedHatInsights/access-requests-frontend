@@ -5,37 +5,17 @@ on:
     workflows: ["Storybook"]
     types: [completed]
 
+concurrency:
+  group: chromatic-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
 jobs:
-  upload:
-    runs-on: ubuntu-latest
-    if: >
-      github.event.workflow_run.conclusion != 'cancelled' &&
-      (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'push')
-    steps:
-      # Checkout base repo with full history — Chromatic needs git log to find
-      # the baseline commit. We always check out the default branch (not the PR
-      # branch) so that no untrusted code from forks is ever executed.
-      - name: Checkout Base Repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: storybook-static
-          path: storybook-static
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish to Chromatic
-        id: chromatic
-        uses: chromaui/action@v1
-        with:
-          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
-          storybookBuildDir: storybook-static
-          # Auto-accept changes on master (push) to establish the visual baseline.
-          # PR builds are left for review.
-          autoAcceptChanges: ${{ github.event.workflow_run.event == 'push' }}
-
+  chromatic:
+    uses: RedHatInsights/experience-ui-governance/.github/workflows/reusable-chromatic.yml@5a772c75817a80fc30fae4e5c2bbd54b4ba114eb # main
+    secrets:
+      chromatic-project-token: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
