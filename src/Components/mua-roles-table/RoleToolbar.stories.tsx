@@ -1,5 +1,7 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
+import { expect, screen, userEvent, within } from 'storybook/test';
+import { IntlProvider } from 'react-intl';
 import RoleToolbar from './RoleToolbar';
 
 // Interface for mock role data (matches what RoleToolbar expects)
@@ -99,8 +101,6 @@ const applications = [
   'subscriptions',
 ];
 
-const columns = ['Role name', 'Description', 'Permissions', 'Applications'];
-
 // Mock pagination component
 const MockPagination: React.FC<{ id: string }> = ({ id }) => (
   <div
@@ -118,7 +118,6 @@ const MockPagination: React.FC<{ id: string }> = ({ id }) => (
 
 // Base props that most stories will use
 const baseProps = {
-  columns,
   rows: mockRoles,
   filteredRows: mockRoles,
   pagedRows: mockRoles.slice(0, 5),
@@ -149,6 +148,43 @@ export const Default: Story = {
           'Default toolbar state with no selections or active filters. Shows bulk select checkbox and filter controls.',
       },
     },
+  },
+};
+
+// Exercise the translated dropdown label independently of its stable state value.
+export const SpanishApplicationFilter: Story = {
+  args: {
+    ...baseProps,
+    selectedRoles: [],
+    isPageSelected: false,
+    isPagePartiallySelected: false,
+    appSelections: [],
+    nameFilter: '',
+  },
+  render: (args) => (
+    <IntlProvider
+      locale="es"
+      messages={{
+        'accessRequests.mua.toolbar.roleName': 'Nombre del rol',
+        'accessRequests.mua.toolbar.application': 'Aplicación',
+      }}
+    >
+      <RoleToolbar {...args} />
+    </IntlProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole('button', { name: /nombre del rol/i })
+    );
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Aplicación' }));
+    await expect(
+      canvas.getByRole('button', { name: 'Aplicación' })
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Filter by application' })
+    ).toBeVisible();
+    await expect(canvas.queryByRole('searchbox')).not.toBeInTheDocument();
   },
 };
 

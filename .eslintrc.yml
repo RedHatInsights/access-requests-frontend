@@ -18,6 +18,47 @@
         "@typescript-eslint/no-unused-vars": ["error", { "ignoreRestSiblings": true }],
         "@typescript-eslint/no-explicit-any": "warn"
       }
+    },
+    {
+      "files": ["src/**/*.tsx", "src/**/*.ts"],
+      "excludedFiles": ["**/*.test.*", "**/*.stories.*"],
+      "plugins": ["i18next"],
+      "rules": {
+        "i18next/no-literal-string": [
+          "error",
+          {
+            "mode": "jsx-only",
+            "words": {
+              "exclude": [
+                "^flex_[0-9]+$",
+                "^alignSelf[A-Z]",
+                "^spaceItems[A-Z]",
+                "^grow$",
+                "^noPadding$",
+                "^nowrap$",
+                "^compact$",
+                "^pending$",
+                "^approved$",
+                "^denied$",
+                "^create$",
+                "^edit$",
+                "^cancel$"
+              ]
+            },
+            "jsx-attributes": {
+              "include": [],
+              "exclude": [
+                "className", "styleName", "style", "type", "key", "id", "width", "height",
+                "name", "href", "to", "path", "target", "variant", "component", "form",
+                "fieldId", "filterId", "widgetId", "ouiaId", "data-testid", "testId",
+                "autoFocus", "headingLevel", "size", "sx", "direction", "position",
+                "align", "icon", "variantPrefix", "isCompact", "ouiaId.*",
+                "locale", "defaultLocale", "aria-describedby", "aria-labelledby", "titleIconVariant", "iconVariant", "placeholder"
+              ]
+            }
+          }
+        ]
+      }
     }
   ] ,
   "rules": {

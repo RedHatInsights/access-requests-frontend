@@ -9,7 +9,23 @@ import {
   Spinner,
   Title,
 } from '@patternfly/react-core';
+import { FormattedMessage, defineMessages } from 'react-intl';
 import { StatusLabel } from '../Helpers/getActions';
+
+const messages = defineMessages({
+  title: {
+    id: 'accessRequests.details.card.title',
+    defaultMessage: 'Request details',
+  },
+  status: {
+    id: 'accessRequests.details.card.status',
+    defaultMessage: 'Request status',
+  },
+  decision: {
+    id: 'accessRequests.details.card.decision',
+    defaultMessage: 'Request decision',
+  },
+});
 
 interface RequestDetailsCardViewProps {
   /** Whether this is the internal (Red Hat employee) view */
@@ -30,6 +46,11 @@ interface RequestDetailsCardViewProps {
  * Pure presentational component for displaying request details in a card format.
  * Shows different views for internal vs external users.
  */
+
+function formatPropLabel(prop: string): string {
+  return capitalize(prop.replace(/_/g, ' ').replace('id', 'ID'));
+}
+
 export function RequestDetailsCardView({
   isInternal,
   status,
@@ -42,7 +63,7 @@ export function RequestDetailsCardView({
     <Card ouiaId="request-details" style={{ height: '100%' }}>
       <CardTitle>
         <Title headingLevel="h2" size="xl">
-          Request details
+          <FormattedMessage {...messages.title} />
         </Title>
       </CardTitle>
       <CardBody>
@@ -54,7 +75,9 @@ export function RequestDetailsCardView({
               {isInternal ? (
                 <div>
                   <label>
-                    <b>Request status</b>
+                    <b>
+                      <FormattedMessage {...messages.status} />
+                    </b>
                   </label>
                   <br />
                   <Label className="pf-v6-u-mt-sm" {...getLabelProps(status)}>
@@ -64,7 +87,9 @@ export function RequestDetailsCardView({
               ) : (
                 <React.Fragment>
                   <label>
-                    <b>Request decision</b>
+                    <b>
+                      <FormattedMessage {...messages.decision} />
+                    </b>
                   </label>
                   <br />
                   <StatusLabel requestId={requestId!} status={status} />
@@ -74,9 +99,7 @@ export function RequestDetailsCardView({
             {displayProps.map((prop, key) => (
               <div className="pf-v6-u-pb-md" key={key}>
                 <label>
-                  <b>
-                    {capitalize(prop.replace(/_/g, ' ').replace('id', 'ID'))}
-                  </b>
+                  <b>{formatPropLabel(prop)}</b>
                 </label>
                 <br />
                 <div>{requestData[prop]}</div>
