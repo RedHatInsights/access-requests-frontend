@@ -2,8 +2,24 @@ import React from 'react';
 import { Button, Label } from '@patternfly/react-core';
 import { capitalize } from '@patternfly/react-core/dist/esm/helpers/util';
 import EditAltIcon from '@patternfly/react-icons/dist/js/icons/edit-alt-icon';
+import { useIntl } from 'react-intl';
 import { AccessRequestStatus, getLabelProps } from './getLabelProps';
 import { useStatusUpdate } from './hooks/useStatusUpdate';
+
+const messages = {
+  approve: {
+    id: 'accessRequests.status.approve',
+    defaultMessage: 'Approve',
+  },
+  deny: {
+    id: 'accessRequests.status.deny',
+    defaultMessage: 'Deny',
+  },
+  editStatus: {
+    id: 'accessRequests.status.editStatus',
+    defaultMessage: 'Edit status',
+  },
+};
 
 interface InternalAction {
   title: string;
@@ -84,6 +100,7 @@ export function StatusLabelView({
   onSetEditing = () => {},
   onUpdateStatus = () => {},
 }: StatusLabelViewProps): React.ReactElement {
+  const intl = useIntl();
   const label = <Label {...getLabelProps(status)}>{capitalize(status)}</Label>;
 
   // For internal view - just show the label
@@ -101,7 +118,7 @@ export function StatusLabelView({
             variant="primary"
             onClick={() => onUpdateStatus('approved')}
           >
-            Approve
+            {intl.formatMessage(messages.approve)}
           </Button>
           <Button
             className="pf-v6-u-mr-md"
@@ -109,7 +126,7 @@ export function StatusLabelView({
             variant="danger"
             onClick={() => onUpdateStatus('denied')}
           >
-            Deny
+            {intl.formatMessage(messages.deny)}
           </Button>
         </React.Fragment>
       ) : (
@@ -119,7 +136,7 @@ export function StatusLabelView({
         <Button
           icon={<EditAltIcon />}
           variant="plain"
-          aria-label="Edit status"
+          aria-label={intl.formatMessage(messages.editStatus)}
           onClick={() => onSetEditing(!isEditing)}
         />
       )}

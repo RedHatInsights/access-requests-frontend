@@ -1,4 +1,5 @@
 import React from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { getInternalActions } from '../Helpers/getActions';
 import {
   Breadcrumb,
@@ -22,6 +23,33 @@ import MUARolesTable from './mua-roles-table/MUARolesTable';
 import CancelRequestModal from './CancelRequestModal';
 import AccessRequestWizard from './access-requests-wizard/AccessRequestsWizard';
 import { RequestDetailsCard } from './RequestDetailsCard';
+
+// PatternFly layout modifier constants (structural, not user-facing)
+const FLEX_GROW = { default: 'grow' } as const;
+const ALIGN_SELF_FLEX_END = { default: 'alignSelfFlexEnd' } as const;
+const SPACE_ITEMS_LG = { xl: 'spaceItemsLg' } as const;
+const FLEX_1 = { default: 'flex_1' } as const;
+const FLEX_3 = { default: 'flex_3' } as const;
+const ALIGN_SELF_STRETCH = { default: 'alignSelfStretch' } as const;
+
+const detailsMessages = {
+  accessRequests: {
+    id: 'accessRequests.details.breadcrumb.accessRequests',
+    defaultMessage: 'Access Requests',
+  },
+  redHatPrefix: {
+    id: 'accessRequests.details.breadcrumb.redHatPrefix',
+    defaultMessage: 'Red Hat ',
+  },
+  rolesRequested: {
+    id: 'accessRequests.details.rolesRequested',
+    defaultMessage: 'Roles requested',
+  },
+  kebabDropdownAria: {
+    id: 'accessRequests.details.kebabDropdownAria',
+    defaultMessage: 'kebab dropdown toggle',
+  },
+};
 
 interface AccessRequestDetailsPageViewProps {
   /** Whether this is the internal (Red Hat employee) view */
@@ -62,6 +90,7 @@ export function AccessRequestDetailsPageView({
   onModalClose,
   onActionClick,
 }: AccessRequestDetailsPageViewProps): React.ReactElement {
+  const intl = useIntl();
   // Get actions for dropdown
   const actions = getInternalActions(
     request?.status || 'pending',
@@ -75,25 +104,32 @@ export function AccessRequestDetailsPageView({
         <Breadcrumb>
           <BreadcrumbItem
             render={() => (
-              <Link to="..">{!isInternal && 'Red Hat '}Access Requests</Link>
+              <Link to="..">
+                {!isInternal && (
+                  <FormattedMessage {...detailsMessages.redHatPrefix} />
+                )}
+                {intl.formatMessage(detailsMessages.accessRequests)}
+              </Link>
             )}
           />
           <BreadcrumbItem>{requestId}</BreadcrumbItem>
         </Breadcrumb>
         <Flex direction={{ default: 'column', md: 'row' }}>
-          <FlexItem grow={{ default: 'grow' }}>
+          <FlexItem grow={FLEX_GROW}>
             <Title headingLevel="h1" size="2xl" className="pf-v6-u-pt-md">
               {requestId}
             </Title>
           </FlexItem>
           {isInternal && actions.items.length > 0 && (
-            <FlexItem alignSelf={{ default: 'alignSelfFlexEnd' }}>
+            <FlexItem alignSelf={ALIGN_SELF_FLEX_END}>
               <Dropdown
                 toggle={(toggleRef) => (
                   <MenuToggle
                     ref={toggleRef}
                     id="actions-toggle"
-                    aria-label="kebab dropdown toggle"
+                    aria-label={intl.formatMessage(
+                      detailsMessages.kebabDropdownAria
+                    )}
                     variant="plain"
                     onClick={onDropdownToggle}
                     isExpanded={isDropdownOpen}
@@ -122,13 +158,10 @@ export function AccessRequestDetailsPageView({
       </PageSection>
       <PageSection hasBodyWrapper={false}>
         <Flex
-          spaceItems={{ xl: 'spaceItemsLg' }}
+          spaceItems={SPACE_ITEMS_LG}
           direction={{ default: 'column', lg: 'row' }}
         >
-          <FlexItem
-            flex={{ default: 'flex_1' }}
-            alignSelf={{ default: 'alignSelfStretch' }}
-          >
+          <FlexItem flex={FLEX_1} alignSelf={ALIGN_SELF_STRETCH}>
             <RequestDetailsCard
               isInternal={isInternal}
               request={request}
@@ -137,14 +170,14 @@ export function AccessRequestDetailsPageView({
             />
           </FlexItem>
           <FlexItem
-            flex={{ default: 'flex_3' }}
-            grow={{ default: 'grow' }}
-            alignSelf={{ default: 'alignSelfStretch' }}
+            flex={FLEX_3}
+            grow={FLEX_GROW}
+            alignSelf={ALIGN_SELF_STRETCH}
           >
             <Card ouiaId="request-roles" style={{ height: '100%' }}>
               <CardTitle>
                 <Title headingLevel="h2" size="xl">
-                  Roles requested
+                  {intl.formatMessage(detailsMessages.rolesRequested)}
                 </Title>
               </CardTitle>
               <CardBody>

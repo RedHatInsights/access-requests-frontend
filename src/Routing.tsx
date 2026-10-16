@@ -5,6 +5,7 @@ import {
   Spinner,
   Switch as ToggleSwitch,
 } from '@patternfly/react-core';
+import { defineMessages, useIntl } from 'react-intl';
 import { UserData } from './Hooks/useUserData';
 import MissingPage from '@patternfly/react-component-groups/dist/dynamic/MissingPage';
 import pathnames from './pathnames';
@@ -28,10 +29,22 @@ const renderRoutes = (routes: RouteType[] = []) =>
     </Route>
   ));
 
+const routingMessages = defineMessages({
+  internalView: {
+    id: 'accessRequests.routing.internalView',
+    defaultMessage: 'Internal view',
+  },
+  externalView: {
+    id: 'accessRequests.routing.externalView',
+    defaultMessage: 'External view',
+  },
+});
+
 const isDev = process.env.NODE_ENV !== 'production';
 
 export const Routing = ({ userData }: { userData: UserData }) => {
   const [isInternal, setIsInternal] = useState(userData.isInternal);
+  const intl = useIntl();
 
   const routes = [
     {
@@ -60,7 +73,11 @@ export const Routing = ({ userData }: { userData: UserData }) => {
         <ToggleSwitch
           className="pf-v6-u-p-sm"
           id="toggle-view"
-          label={isInternal ? 'Internal view' : 'External view'}
+          label={
+            isInternal
+              ? intl.formatMessage(routingMessages.internalView)
+              : intl.formatMessage(routingMessages.externalView)
+          }
           checked={isInternal}
           onChange={() => setIsInternal((prev) => !prev)}
         />

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useIntl } from 'react-intl';
 import {
   capitalize,
   Dropdown,
@@ -21,6 +22,25 @@ import { BulkSelect } from '@patternfly/react-component-groups/dist/dynamic/Bulk
 import { FilterIcon } from '@patternfly/react-icons';
 import { useRoleToolbar } from './hooks/useRoleToolbar';
 import { BulkSelectValue } from '@patternfly/react-component-groups';
+
+const toolbarMessages = {
+  roleName: {
+    id: 'accessRequests.mua.toolbar.roleName',
+    defaultMessage: 'Role name',
+  },
+  application: {
+    id: 'accessRequests.mua.toolbar.application',
+    defaultMessage: 'Application',
+  },
+  selectApplicationsAria: {
+    id: 'accessRequests.mua.toolbar.selectApplicationsAria',
+    defaultMessage: 'Select applications',
+  },
+  searchInputAria: {
+    id: 'accessRequests.mua.toolbar.searchInputAria',
+    defaultMessage: 'Search input',
+  },
+};
 
 const selectLabelId = 'filter-application';
 const selectPlaceholder = 'Filter by application';
@@ -66,6 +86,7 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
   AccessRequestsPagination,
   applications,
 }) => {
+  const intl = useIntl();
   const {
     state,
     hasFilters,
@@ -143,7 +164,10 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
                   )}
                 >
                   <DropdownList>
-                    {['Role name', 'Application'].map((colName) => (
+                    {[
+                      intl.formatMessage(toolbarMessages.roleName),
+                      intl.formatMessage(toolbarMessages.application),
+                    ].map((colName) => (
                       <DropdownItem key={colName} value={colName}>
                         {capitalize(colName)}
                       </DropdownItem>
@@ -158,7 +182,9 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
                   </span>
                   <Select
                     aria-labelledby={selectLabelId}
-                    aria-label="Select applications"
+                    aria-label={intl.formatMessage(
+                      toolbarMessages.selectApplicationsAria
+                    )}
                     isOpen={state.isSelectOpen}
                     selected={appSelections}
                     onSelect={(
@@ -204,7 +230,9 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
                   name="rolesSearch"
                   id="rolesSearch"
                   type="search"
-                  aria-label="Search input"
+                  aria-label={intl.formatMessage(
+                    toolbarMessages.searchInputAria
+                  )}
                   placeholder="Filter by role name"
                   value={nameFilter}
                   onChange={(
@@ -225,7 +253,7 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
                   labels={[nameFilter]}
                   deleteLabel={() => setNameFilter('')}
                   deleteLabelGroup={() => setNameFilter('')}
-                  categoryName="Role name"
+                  categoryName={intl.formatMessage(toolbarMessages.roleName)}
                 >
                   {nameFilter}
                 </ToolbarFilter>
@@ -239,7 +267,7 @@ const RoleToolbar: React.FC<RoleToolbarProps> = ({
                     )
                   }
                   deleteLabelGroup={() => setAppSelections([])}
-                  categoryName="Application"
+                  categoryName={intl.formatMessage(toolbarMessages.application)}
                 >
                   {nameFilter}
                 </ToolbarFilter>
