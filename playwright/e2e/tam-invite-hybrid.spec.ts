@@ -41,24 +41,24 @@ const CONFIG = {
 //=============================================================================
 
 const TIMEOUTS = {
-  // Page navigation
-  PAGE_LOAD: 60_000,
-  SSO_REDIRECT: 30_000,
+  // Page navigation — federated modules take 60-90s in Konflux CI
+  PAGE_LOAD: 120_000,
+  SSO_REDIRECT: 60_000,
   SSO_STAGE: 15_000,
 
   // Authentication
-  OIDC_INIT: 2_000,
-  CHROME_REINIT: 5_000,
+  OIDC_INIT: 3_000,
+  CHROME_REINIT: 10_000,
 
   // UI interactions
-  MODAL_OPEN: 2_000,
-  MODAL_TRANSITION: 2_000,
-  NAV_EXPAND: 1_000,
-  NAV_CLICK: 2_000,
-  FEDERATED_MODULE: 10_000,
-  FORM_SUBMIT: 3_000,
-  TABLE_REFRESH: 2_000,
-  TABLE_SEARCH: 5_000,
+  MODAL_OPEN: 5_000,
+  MODAL_TRANSITION: 5_000,
+  NAV_EXPAND: 3_000,
+  NAV_CLICK: 5_000,
+  FEDERATED_MODULE: 90_000,
+  FORM_SUBMIT: 10_000,
+  TABLE_REFRESH: 10_000,
+  TABLE_SEARCH: 15_000,
 
   // Chrome override polling
   OVERRIDE_POLL_INTERVAL: 50,
