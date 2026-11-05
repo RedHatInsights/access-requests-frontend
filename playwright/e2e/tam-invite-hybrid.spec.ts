@@ -46,7 +46,6 @@ const TIMEOUTS = {
   MODAL_OPEN: 2_000,
   MODAL_TRANSITION: 2_000,
   NAV_EXPAND: 1_000,
-  NAV_CLICK: 2_000,
   FEDERATED_MODULE: 10_000,
   FORM_SUBMIT: 3_000,
   TABLE_REFRESH: 2_000,
@@ -162,15 +161,18 @@ test.describe('TAM Invite - E2E Workflow', () => {
 
     // Click "Red Hat Access Requests"
     const accessRequestsLink = page.locator(SELECTORS.nav.accessRequestsLink).first();
-    if (await accessRequestsLink.isVisible()) {
-      await accessRequestsLink.click();
-      await page.waitForTimeout(TIMEOUTS.NAV_CLICK);
-    }
+    await expect(accessRequestsLink).toBeVisible();
+    await accessRequestsLink.click();
+    await expect(page).toHaveURL(/\/access-requests(?:\/|\?|$)/);
 
       //=======================================================================
       // Step 3: Verify Button and Test Workflow
       //=======================================================================
 
+
+      // A 403 from the backend replaces the page with the unauthorized screen;
+      // the UI-only override cannot grant API permissions.
+      await expect(page.getByText('You do not have access to Access Requests')).not.toBeVisible();
 
       // Find and click "Create request" button
       const createButton = page.locator(SELECTORS.tamInvite.createButton);

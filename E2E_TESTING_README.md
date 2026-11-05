@@ -49,12 +49,12 @@ test('TAM invite workflow', async ({ internalUserPage }) => {
 
 **Why This is Needed:**
 - The test account cannot be marked internal in the Chrome user identity.
-- The app uses `chrome.auth.getUser()` to select its internal or external view.
+- The standalone app uses `chrome.auth.getUser()` to select its internal or external view; the federated pages also receive `isInternal` from the RBAC host. The override must apply to both.
 
 **What the Fixture Does:**
 1. Performs SSO login with real credentials.
 2. Sets `localStorage.setItem('access-requests:force-internal-user', 'true')` on the console origin.
-3. Navigates to the access requests app, which reads the flag when loading user data.
+3. Navigates to Access Requests, where both standalone and federated page views read the flag.
 
 To enable the internal view manually, set the same key on the console origin and reload; remove the key and reload to restore the normal view. Only the exact value `true` enables it. This does **not** modify tokens, Chrome identity, or server permissions; server-side actions can still fail if the test account lacks authorization.
 

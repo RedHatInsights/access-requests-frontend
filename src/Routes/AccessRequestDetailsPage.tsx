@@ -3,6 +3,7 @@ import { Provider } from 'react-redux';
 import { RegistryContext } from '../store';
 import { useAccessRequestDetails } from './hooks/useAccessRequestDetails';
 import { AccessRequestDetailsPageView } from '../Components/AccessRequestDetailsPageView';
+import { forceInternalUser } from '../Hooks/internalUserOverride';
 
 const BaseAccessRequestDetailsPage: React.FC<{
   isInternal: boolean;
@@ -53,6 +54,7 @@ interface AccessRequestDetailsPageProps {
    * Optional because this component serves dual purposes:
    * 1. Standalone app (determines view from route context)
    * 2. Federated module consumed by RBAC UI (explicit prop control)
+   * The localStorage E2E override takes precedence in either case.
    */
   isInternal?: boolean;
 }
@@ -68,7 +70,9 @@ const AccessRequestDetailsPage: React.FC<AccessRequestDetailsPageProps> = ({
 
   return (
     <Provider store={(getRegistry as any)().getStore()}>
-      <BaseAccessRequestDetailsPage isInternal={isInternal} />
+      <BaseAccessRequestDetailsPage
+        isInternal={forceInternalUser() || isInternal}
+      />
     </Provider>
   );
 };

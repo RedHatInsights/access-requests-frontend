@@ -4,6 +4,7 @@ import { PageSection, Title } from '@patternfly/react-core';
 import AccessRequestsTable from '../Components/AccessRequestsTable';
 import registry from '../store';
 import ErroReducerCatcher from '../Components/ErrorReducerCatcher';
+import { forceInternalUser } from '../Hooks/internalUserOverride';
 
 interface AccessRequestsPageProps {
   /**
@@ -14,6 +15,7 @@ interface AccessRequestsPageProps {
    * Optional because this component serves dual purposes:
    * 1. Standalone app (determines view from route context)
    * 2. Federated module consumed by RBAC UI (explicit prop control)
+   * The localStorage E2E override takes precedence in either case.
    */
   isInternal?: boolean;
 }
@@ -21,6 +23,8 @@ interface AccessRequestsPageProps {
 const AccessRequestsPage: React.FC<AccessRequestsPageProps> = ({
   isInternal = false,
 }) => {
+  const internalView = forceInternalUser() || isInternal;
+
   return (
     <Provider store={registry.getStore()}>
       <ErroReducerCatcher>
@@ -34,7 +38,7 @@ const AccessRequestsPage: React.FC<AccessRequestsPageProps> = ({
           </p>
         </PageSection>
         <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>
-          <AccessRequestsTable isInternal={isInternal} />
+          <AccessRequestsTable isInternal={internalView} />
         </PageSection>
       </ErroReducerCatcher>
     </Provider>
