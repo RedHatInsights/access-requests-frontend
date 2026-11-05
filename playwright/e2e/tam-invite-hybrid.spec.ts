@@ -1,26 +1,18 @@
 /// <reference path="../types/window.d.ts" />
 
 import { test, expect } from '../fixtures/internal-user-fixture';
+import { FORCE_INTERNAL_USER_KEY } from '../../src/Hooks/internalUserOverride';
 
 /**
  * TAM Invite E2E Test
  *
  * Tests the complete TAM (Technical Account Manager) invite workflow including:
- * - Button visibility with is_internal: true (ONLY visible to internal users)
+ * - Button visibility with the app's internal-view override
  * - Form submission (3-step wizard)
  * - Request verification in table
  *
- * WHY THIS TEST USES THE INTERNAL USER FIXTURE:
- * ==============================================
- * The TAM invite feature is INTERNAL-USER-ONLY. Without is_internal: true:
- * - The "Create request" button does not appear
- * - Backend TAM APIs reject the requests
- * - The entire workflow is inaccessible
- *
- * The `internalUserPage` fixture from internal-user-fixture.ts:
- * - Creates a browser context with chrome.auth.getUser() override
- * - Swaps the OIDC token to set profile.is_internal: true
- * - Ensures the TAM workflow is accessible
+ * The fixture sets a localStorage flag for the app's internal view without
+ * changing the authenticated user or bypassing backend authorization.
  *
  * See playwright/fixtures/internal-user-fixture.ts for implementation details.
  */
@@ -54,15 +46,11 @@ const TIMEOUTS = {
   MODAL_OPEN: 2_000,
   MODAL_TRANSITION: 2_000,
   NAV_EXPAND: 1_000,
-  NAV_CLICK: 2_000,
   FEDERATED_MODULE: 10_000,
   FORM_SUBMIT: 3_000,
   TABLE_REFRESH: 2_000,
   TABLE_SEARCH: 5_000,
 
-  // Chrome override polling
-  OVERRIDE_POLL_INTERVAL: 50,
-  OVERRIDE_POLL_TIMEOUT: 30_000,
 } as const;
 
 //=============================================================================
@@ -100,11 +88,6 @@ const SELECTORS = {
     roleCheckbox: 'input[type="checkbox"]:visible',
     nextButton: 'button:has-text("Next")',
     submitButton: 'button:has-text("Submit"), button:has-text("Create")',
-  },
-
-  // API
-  api: {
-    identity: '/api/apicast-tests/identity',
   },
 } as const;
 
@@ -145,22 +128,15 @@ const TEST_DATA = {
 //=============================================================================
 
 test.describe('TAM Invite - E2E Workflow', () => {
-  test('should complete TAM invite workflow with is_internal override', async ({ internalUserPage: page }) => {
+  test('should complete TAM invite workflow with localStorage internal-view override', async ({ internalUserPage: page }) => {
     test.setTimeout(CONFIG.test.timeout);
 
-    // The internalUserPage fixture has already:
-    // - Created a browser context with TWO-LAYER chrome.auth override
-    // - Swapped the OIDC token to set is_internal: true
-    // - Verified the session is valid
-    // We can now proceed directly to testing the TAM workflow
+    // Verify the app override is set; the server identity remains unchanged.
+    expect(await page.evaluate((key) => localStorage.getItem(key), FORCE_INTERNAL_USER_KEY)).toBe('true');
 
-    //=======================================================================
-    // Step 1: Verify Identity (is_internal: true)
-    //=======================================================================
-
-    const identity = await page.request.get(SELECTORS.api.identity).then(r => r.json());
-    expect(identity.identity.user.is_internal).toBe(true);
-    expect(identity.identity.user.is_org_admin).toBe(true);
+    // The global setup verifies authentication against the identity API on
+    // console.stage.redhat.com. The dev proxy returns 401 for that diagnostic
+    // endpoint, so it is not a useful check on the app's test origin.
 
     //=======================================================================
     // Step 2: Navigate to TAM Invite Page
@@ -181,29 +157,18 @@ test.describe('TAM Invite - E2E Workflow', () => {
 
     // Click "Red Hat Access Requests"
     const accessRequestsLink = page.locator(SELECTORS.nav.accessRequestsLink).first();
-    if (await accessRequestsLink.isVisible()) {
-      await accessRequestsLink.click();
-      await page.waitForTimeout(TIMEOUTS.NAV_CLICK);
-    }
+    await expect(accessRequestsLink).toBeVisible();
+    await accessRequestsLink.click();
+    await expect(page).toHaveURL(/\/access-requests(?:\/|\?|$)/);
 
       //=======================================================================
       // Step 3: Verify Button and Test Workflow
       //=======================================================================
 
 
-      // Verify chrome.auth.getUser() returns is_internal: true
-      const chromeUser = await page.evaluate(async () => {
-        if (window.insights?.chrome?.auth?.getUser) {
-          const user = await window.insights.chrome.auth.getUser();
-          return {
-            is_internal: user?.identity?.user?.is_internal,
-            is_org_admin: user?.identity?.user?.is_org_admin
-          };
-        }
-        return null;
-      });
-
-      expect(chromeUser?.is_internal).toBe(true);
+      // A 403 from the backend replaces the page with the unauthorized screen;
+      // the UI-only override cannot grant API permissions.
+      await expect(page.getByText('You do not have access to Access Requests')).not.toBeVisible();
 
       // Find and click "Create request" button
       const createButton = page.locator(SELECTORS.tamInvite.createButton);
