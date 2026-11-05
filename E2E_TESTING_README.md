@@ -31,7 +31,7 @@ See **[E2E_TESTING_LOCAL.md](E2E_TESTING_LOCAL.md)** for detailed local testing 
 
 ## Testing Internal-Only Features
 
-**IMPORTANT:** Some features like TAM (Technical Account Manager) invites require `is_internal: true` to work.
+**IMPORTANT:** Some features like TAM (Technical Account Manager) invites require the internal view to be enabled. The override only changes the frontend view; backend authorization still uses the real identity.
 
 ### The Internal User Fixture
 
@@ -41,27 +41,22 @@ Use `playwright/fixtures/internal-user-fixture.ts` for tests needing internal ac
 import { test, expect } from '../fixtures/internal-user-fixture';
 
 test('TAM invite workflow', async ({ internalUserPage }) => {
-  // internalUserPage has is_internal: true already set
+  // internalUserPage has the UI override set before loading the app
   await internalUserPage.goto('/iam/my-user-access');
   // Internal-only features are now visible!
 });
 ```
 
 **Why This is Needed:**
-- JWT tokens from SSO have `is_internal: false` even for internal users
-- The 3scale API gateway injects `is_internal: true` in API responses
-- BUT the frontend reads `chrome.auth.getUser()` which reads JWT claims directly
-- React components cache this user object before API calls complete
+- The test account cannot be marked internal in the Chrome user identity.
+- The app uses `chrome.auth.getUser()` to select its internal or external view.
 
 **What the Fixture Does:**
-1. Performs SSO login and extracts the JWT token
-2. Swaps the OIDC token to set `profile.is_internal: true`
-3. Uses a TWO-LAYER override to ensure `is_internal: true` persists:
-   - Layer 1: `Storage.prototype.getItem` - intercepts localStorage reads
-   - Layer 2: `chrome.auth.getUser()` - wraps the function directly
-4. Returns a page ready to test internal-only features
+1. Performs SSO login with real credentials.
+2. Sets `localStorage.setItem('access-requests:force-internal-user', 'true')` on the console origin.
+3. Navigates to the access requests app, which reads the flag when loading user data.
 
-**⚠️ DO NOT REMOVE THIS FIXTURE** - It's essential for testing internal-only features.
+To enable the internal view manually, set the same key on the console origin and reload; remove the key and reload to restore the normal view. Only the exact value `true` enables it. This does **not** modify tokens, Chrome identity, or server permissions; server-side actions can still fail if the test account lacks authorization.
 
 See `playwright/fixtures/internal-user-fixture.ts` for detailed technical explanation.
 
