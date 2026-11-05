@@ -3,19 +3,12 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright configuration for internal user testing.
  *
- * This config uses global setup to authenticate with the internal user token
- * from Vault, enabling tests to verify is_internal: true functionality.
- *
- * Prerequisites:
- * - Vault CLI installed
- * - VPN connection
- * - Access to Vault path: insights/secrets/qe/stage/users/idp_internal_user
+ * Default baseURL targets the Konflux dev-proxy (stage.foo.redhat.com:1337).
+ * Override with PLAYWRIGHT_BASE_URL for local runs against real stage.
  *
  * Usage:
- *   npx playwright test                    # Run all tests
- *   npx playwright test --debug            # Debug mode
- *   npx playwright test --ui               # UI mode
- *   npx playwright show-report             # View report
+ *   npx playwright test                                                   # CI / Konflux
+ *   PLAYWRIGHT_BASE_URL=https://console.stage.redhat.com npx playwright test  # local
  */
 
 export default defineConfig({
@@ -24,12 +17,12 @@ export default defineConfig({
   // Global setup runs once before all tests
   globalSetup: require.resolve('./playwright/setup/global-setup.ts'),
 
-  // Timeout for each test
-  timeout: 60000,
+  // Slow SSO + federated modules in Konflux — 3 min per test
+  timeout: 180_000,
 
   // Expect timeout for assertions
   expect: {
-    timeout: 10000
+    timeout: 15_000,
   },
 
   // Fail the build on CI if you accidentally left test.only in the source code
@@ -38,8 +31,9 @@ export default defineConfig({
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
 
-  // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : undefined,
+  // Serial execution — parallel runs flaky in CI
+  fullyParallel: false,
+  workers: 1,
 
   // Reporter to use
   reporter: [
@@ -48,10 +42,8 @@ export default defineConfig({
   ],
 
   use: {
-    // Base URL for the application
-    // In CI (Konflux): Uses https://stage.foo.redhat.com:1337 (proxied environment)
-    // Locally: Can override with BASE_URL env var
-    baseURL: process.env.BASE_URL || 'https://console.stage.redhat.com',
+    // PLAYWRIGHT_BASE_URL overrides for local runs; default is the dev proxy (Konflux CI)
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'https://stage.foo.redhat.com:1337',
 
     // Storage state file (contains authenticated session)
     storageState: 'playwright/.auth/internal-user.json',
@@ -66,17 +58,10 @@ export default defineConfig({
     video: 'retain-on-failure',
 
     // Maximum time each action can take
-    actionTimeout: 15000,
+    actionTimeout: 15_000,
 
     // Ignore HTTPS errors (staging certs)
     ignoreHTTPSErrors: true,
-
-    // Use proxy for local development against stage (not needed in CI)
-    ...(!process.env.CI && {
-      proxy: {
-        server: 'http://squid.corp.redhat.com:3128'
-      }
-    })
   },
 
   projects: [
