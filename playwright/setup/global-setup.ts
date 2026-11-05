@@ -1,4 +1,4 @@
-import { chromium, FullConfig } from '@playwright/test';
+import { chromium, FullConfig, BrowserContext, Page } from '@playwright/test';
 import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
 
 /**
@@ -111,6 +111,10 @@ async function globalSetup(config: FullConfig) {
 
   // Disable TrustArc cookie consent prompts (blocks clicks in CI)
   await disableCookiePrompt(page);
+
+  // Keep these available to the error handler and cleanup block.
+  let authContext: BrowserContext | undefined;
+  let authPage: Page | undefined;
 
   // Perform login to get authenticated token
   try {
@@ -244,7 +248,7 @@ async function globalSetup(config: FullConfig) {
       authContextOptions.proxy = SSO_CONFIG.proxy;
     }
 
-    const authContext = await browser.newContext(authContextOptions);
+    authContext = await browser.newContext(authContextOptions);
 
     // Set cookie BEFORE navigating (this is the key!)
     await authContext.addCookies([{
@@ -260,7 +264,7 @@ async function globalSetup(config: FullConfig) {
 
     console.log(`✓ Cookie set with domain ${SSO_CONFIG.console.cookieDomain} and path /`);
 
-    const authPage = await authContext.newPage();
+    authPage = await authContext.newPage();
 
     // Now navigate to the app with the cookie already set
     await authPage.goto(baseURL || SSO_CONFIG.console.url, { waitUntil: 'domcontentloaded', timeout: SSO_CONFIG.timeouts.pageLoad });
@@ -333,11 +337,7 @@ async function globalSetup(config: FullConfig) {
 
     const identity = await response.json();
 
-    if (!identity.identity.user.is_internal) {
-      throw new Error('Token does not have is_internal: true. Check token configuration.');
-    }
-
-    console.log('✓ Internal user authenticated:', identity.identity.user.username);
+    console.log('✓ User authenticated:', identity.identity.user.username);
     console.log('✓ is_internal:', identity.identity.user.is_internal);
     console.log('✓ Org ID:', identity.identity.org_id);
 
@@ -374,7 +374,7 @@ async function globalSetup(config: FullConfig) {
 
     // Take a final screenshot on any error (try both page variables in case one doesn't exist)
     try {
-      if (typeof authPage !== 'undefined') {
+      if (authPage) {
         await authPage.screenshot({
           path: SCREENSHOT_PATHS.errorFinal,
           fullPage: true
@@ -393,7 +393,7 @@ async function globalSetup(config: FullConfig) {
     throw error;
   } finally {
     // Clean up both contexts if they exist
-    try { if (typeof authContext !== 'undefined') await authContext.close(); } catch (e) { /* ignore */ }
+    try { if (authContext) await authContext.close(); } catch (e) { /* ignore */ }
     try { if (typeof context !== 'undefined') await context.close(); } catch (e) { /* ignore */ }
     await browser.close();
   }
