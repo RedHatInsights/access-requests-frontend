@@ -20,7 +20,7 @@ metadata:
 spec:
   params:
   - name: git-url
-    value: '{{source_url}}'
+    value: '{{repo_url}}'
   - name: revision
     value: '{{revision}}'
   - name: output-image
