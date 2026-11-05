@@ -139,8 +139,17 @@ test.describe('TAM Invite - E2E Workflow', () => {
     // Verify the app override is set; the server identity remains unchanged.
     expect(await page.evaluate((key) => localStorage.getItem(key), FORCE_INTERNAL_USER_KEY)).toBe('true');
 
-    const identity = await page.request.get(SELECTORS.api.identity).then(r => r.json());
-    expect(identity.identity.user).toBeDefined();
+    const identityResponse = await page.request.get(SELECTORS.api.identity);
+    expect(
+      identityResponse.ok(),
+      `GET ${SELECTORS.api.identity} returned ${identityResponse.status()} ${identityResponse.statusText()}`
+    ).toBeTruthy();
+
+    const identity = await identityResponse.json();
+    expect(
+      identity?.identity?.user,
+      `Identity response is missing identity.user (top-level keys: ${Object.keys(identity ?? {}).join(', ') || 'none'})`
+    ).toBeDefined();
 
     //=======================================================================
     // Step 2: Navigate to TAM Invite Page
