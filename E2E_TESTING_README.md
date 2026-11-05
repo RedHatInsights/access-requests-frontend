@@ -67,10 +67,8 @@ See `playwright/fixtures/internal-user-fixture.ts` for detailed technical explan
 playwright/
 ├── e2e/
 │   └── tam-invite-hybrid.spec.ts    # TAM invite E2E test
-├── setup/
-│   └── global-setup.ts              # SSO authentication
 ├── fixtures/
-│   └── internal-user-fixture.ts     # Internal user access
+│   └── internal-user-fixture.ts     # SSO login and internal-only UI access
 ├── types/
 │   └── window.d.ts                  # TypeScript definitions
 └── tsconfig.json                    # Playwright config
@@ -87,33 +85,20 @@ playwright/
 
 ## How Authentication Works
 
-### Global Setup Flow
+### Authentication Flow
 
-The `playwright/setup/global-setup.ts` performs real SSO login once before all tests:
+The `internalUserPage` fixture performs SSO login for each test that uses it:
 
 1. Navigate to Red Hat SSO login page
 2. Fill username and handle email modal if present
 3. Fill password and submit
 4. Handle internal Kerberos SSO page (fills same credentials again)
-5. Extract `cs_jwt` token from OAuth callback
-6. Create new browser context with token preset
-7. Inject OIDC state into sessionStorage for react-oidc-context
-8. Verify authentication via identity API
-9. Save authenticated state to `.auth/internal-user.json`
+5. Read the OIDC user state and retain its signed tokens
+6. Set `profile.is_internal: true` in the browser-side OIDC profile
+7. Set the `cs_jwt` cookie from the SSO access token for the app under test
+8. Reload and verify the session
 
-Duration: ~30-45 seconds for initial setup, then cached for subsequent runs.
-
-### Cookie Configuration
-
-The `cs_jwt` cookie must be set with specific configuration:
-```javascript
-{
-  domain: '.stage.redhat.com',  // Leading dot for all subdomains
-  path: '/',                     // Root path for all API endpoints
-  secure: true,
-  sameSite: 'None'
-}
-```
+The PR pipeline sets `BASE_URL` to `https://stage.foo.redhat.com:1337`, which serves the PR-built app and proxies its API requests to Stage.
 
 ## CI/CD Integration
 

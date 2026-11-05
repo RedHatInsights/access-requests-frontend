@@ -64,6 +64,8 @@ spec:
 
       # Set CI environment variable for Playwright config
       export CI=true
+      # Test the PR-built frontend served by the run-application sidecar.
+      export BASE_URL=https://stage.foo.redhat.com:1337
 
       # Wait for application to be ready
       echo "Waiting for application server to be ready..."
