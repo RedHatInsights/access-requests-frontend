@@ -31,7 +31,7 @@ See **[E2E_TESTING_LOCAL.md](E2E_TESTING_LOCAL.md)** for detailed local testing 
 
 ## Testing Internal-Only Features
 
-**IMPORTANT:** Some features like TAM (Technical Account Manager) invites require `is_internal: true` to work.
+**IMPORTANT:** Some features like TAM (Technical Account Manager) invites require the internal view to be enabled. The override only changes the frontend view; backend authorization still uses the real identity.
 
 ### The Internal User Fixture
 
@@ -41,27 +41,22 @@ Use `playwright/fixtures/internal-user-fixture.ts` for tests needing internal ac
 import { test, expect } from '../fixtures/internal-user-fixture';
 
 test('TAM invite workflow', async ({ internalUserPage }) => {
-  // internalUserPage has is_internal: true already set
+  // internalUserPage has the UI override set before loading the app
   await internalUserPage.goto('/iam/my-user-access');
   // Internal-only features are now visible!
 });
 ```
 
 **Why This is Needed:**
-- JWT tokens from SSO have `is_internal: false` even for internal users
-- The 3scale API gateway injects `is_internal: true` in API responses
-- BUT the frontend reads `chrome.auth.getUser()` which reads JWT claims directly
-- React components cache this user object before API calls complete
+- The test account cannot be marked internal in the Chrome user identity.
+- The standalone app uses `chrome.auth.getUser()` to select its internal or external view; the federated pages also receive `isInternal` from the RBAC host. The override must apply to both.
 
 **What the Fixture Does:**
-1. Performs SSO login and extracts the JWT token
-2. Swaps the OIDC token to set `profile.is_internal: true`
-3. Uses a TWO-LAYER override to ensure `is_internal: true` persists:
-   - Layer 1: `Storage.prototype.getItem` - intercepts localStorage reads
-   - Layer 2: `chrome.auth.getUser()` - wraps the function directly
-4. Returns a page ready to test internal-only features
+1. Performs SSO login with real credentials.
+2. Sets `localStorage.setItem('access-requests:force-internal-user', 'true')` on the console origin.
+3. Navigates to Access Requests, where both standalone and federated page views read the flag.
 
-**⚠️ DO NOT REMOVE THIS FIXTURE** - It's essential for testing internal-only features.
+To enable the internal view manually, set the same key on the console origin and reload; remove the key and reload to restore the normal view. Only the exact value `true` enables it. This does **not** modify tokens, Chrome identity, or server permissions; server-side actions can still fail if the test account lacks authorization.
 
 See `playwright/fixtures/internal-user-fixture.ts` for detailed technical explanation.
 
@@ -72,10 +67,8 @@ See `playwright/fixtures/internal-user-fixture.ts` for detailed technical explan
 playwright/
 ├── e2e/
 │   └── tam-invite-hybrid.spec.ts    # TAM invite E2E test
-├── setup/
-│   └── global-setup.ts              # SSO authentication
 ├── fixtures/
-│   └── internal-user-fixture.ts     # Internal user access
+│   └── internal-user-fixture.ts     # SSO login and internal-only UI access
 ├── types/
 │   └── window.d.ts                  # TypeScript definitions
 └── tsconfig.json                    # Playwright config
@@ -92,33 +85,20 @@ playwright/
 
 ## How Authentication Works
 
-### Global Setup Flow
+### Authentication Flow
 
-The `playwright/setup/global-setup.ts` performs real SSO login once before all tests:
+The `internalUserPage` fixture performs SSO login for each test that uses it:
 
 1. Navigate to Red Hat SSO login page
 2. Fill username and handle email modal if present
 3. Fill password and submit
 4. Handle internal Kerberos SSO page (fills same credentials again)
-5. Extract `cs_jwt` token from OAuth callback
-6. Create new browser context with token preset
-7. Inject OIDC state into sessionStorage for react-oidc-context
-8. Verify authentication via identity API
-9. Save authenticated state to `.auth/internal-user.json`
+5. Read the OIDC user state and retain its signed tokens
+6. Set `profile.is_internal: true` in the browser-side OIDC profile
+7. Set the `cs_jwt` cookie from the SSO access token for the app under test
+8. Reload and verify the session
 
-Duration: ~30-45 seconds for initial setup, then cached for subsequent runs.
-
-### Cookie Configuration
-
-The `cs_jwt` cookie must be set with specific configuration:
-```javascript
-{
-  domain: '.stage.redhat.com',  // Leading dot for all subdomains
-  path: '/',                     // Root path for all API endpoints
-  secure: true,
-  sameSite: 'None'
-}
-```
+The PR pipeline sets `BASE_URL` to `https://stage.foo.redhat.com:1337`, which serves the PR-built app and proxies its API requests to Stage.
 
 ## CI/CD Integration
 

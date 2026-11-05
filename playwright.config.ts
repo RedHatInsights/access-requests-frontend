@@ -1,28 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * Playwright configuration for internal user testing.
- *
- * This config uses global setup to authenticate with the internal user token
- * from Vault, enabling tests to verify is_internal: true functionality.
- *
- * Prerequisites:
- * - Vault CLI installed
- * - VPN connection
- * - Access to Vault path: insights/secrets/qe/stage/users/idp_internal_user
- *
- * Usage:
- *   npx playwright test                    # Run all tests
- *   npx playwright test --debug            # Debug mode
- *   npx playwright test --ui               # UI mode
- *   npx playwright show-report             # View report
- */
+/** Playwright configuration for the authenticated staging E2E tests. */
 
 export default defineConfig({
   testDir: './playwright/e2e',
-
-  // Global setup runs once before all tests
-  globalSetup: require.resolve('./playwright/setup/global-setup.ts'),
 
   // Timeout for each test
   timeout: 60000,
@@ -52,9 +33,6 @@ export default defineConfig({
     // In CI (Konflux): Uses https://stage.foo.redhat.com:1337 (proxied environment)
     // Locally: Can override with BASE_URL env var
     baseURL: process.env.BASE_URL || 'https://console.stage.redhat.com',
-
-    // Storage state file (contains authenticated session)
-    storageState: 'playwright/.auth/internal-user.json',
 
     // Collect trace on failure for debugging
     trace: 'on-first-retry',

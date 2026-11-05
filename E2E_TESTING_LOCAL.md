@@ -44,8 +44,8 @@ npx playwright test --ui
 
 ## Troubleshooting
 
-### "cs_jwt token not found"
-- The global-setup failed to authenticate
+### "OIDC state not found" or "No token found"
+- SSO authentication in the internal user fixture failed
 - Check that E2E_USER and E2E_PASSWORD are set correctly
 - Run with `--headed` to see what's happening during login
 
@@ -56,15 +56,14 @@ npx playwright test --ui
 ### "Password field not found"
 - SSO page structure may have changed
 - Run with `--headed` to see the page
-- Check `playwright/test-results/setup-error-password-not-found.png` screenshot
 
 ### View Screenshots on Failure
 ```bash
 # Screenshots are saved to:
 ls playwright/test-results/
 
-# Error screenshots from global-setup:
-ls playwright/test-results/setup-error-*.png
+# Failure screenshots are saved in the test results directory:
+ls playwright/test-results/
 ```
 
 ### View Test Report
@@ -99,10 +98,9 @@ npx playwright test --debug
 
 ## Common Workflows
 
-### After Changing Global Setup
+### After Changing Authentication
 ```bash
-# Delete old auth state to force re-authentication
-rm -rf playwright/.auth/
+# Run again to perform a fresh SSO login
 npx playwright test
 ```
 

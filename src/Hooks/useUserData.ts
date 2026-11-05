@@ -1,5 +1,6 @@
 import useChrome from '@redhat-cloud-services/frontend-components/useChrome';
 import { useEffect, useState } from 'react';
+import { forceInternalUser } from './internalUserOverride';
 
 export interface UserData {
   ready: boolean;
@@ -19,7 +20,7 @@ const useUserData = () => {
       chrome.auth.getUser().then((user) => {
         setUserData({
           ready: true,
-          isInternal: user?.identity?.user?.is_internal,
+          isInternal: forceInternalUser() || user?.identity?.user?.is_internal,
           isOrgAdmin: user?.identity?.user?.is_org_admin,
         });
       });
