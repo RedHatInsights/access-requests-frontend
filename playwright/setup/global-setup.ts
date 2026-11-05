@@ -51,6 +51,86 @@ const SCREENSHOT_PATHS = {
 } as const;
 
 /**
+ * Keycloak path fragment for the "first broker login" flow
+ */
+const FIRST_BROKER_LOGIN = 'login-actions/first-broker-login';
+
+/**
+ * Keycloak runs its first-broker-login flow when the identity returned by the
+ * internal SSO IdP is not yet linked to a redhat-external account. It renders an
+ * interactive page — "review profile" or "an account already exists" — and the
+ * OAuth flow stops there until the form is submitted, so no code is ever issued.
+ *
+ * No-op unless we actually landed on that page.
+ */
+async function handleFirstBrokerLogin(page: Page) {
+  if (!page.url().includes(FIRST_BROKER_LOGIN)) {
+    return;
+  }
+
+  console.log('⚠ Keycloak first-broker-login interstitial:', page.url());
+
+  // "An account already exists" — link this login to the existing account
+  const linkAccount = page
+    .getByRole('link', { name: /add to existing account/i })
+    .or(page.getByRole('button', { name: /add to existing account|link account/i }));
+
+  if (await linkAccount.isVisible({ timeout: TIMEOUTS.MODAL_VISIBILITY }).catch(() => false)) {
+    await linkAccount.click();
+    await page.waitForLoadState('domcontentloaded');
+    console.log('✓ Chose "add to existing account"');
+  }
+
+  // "Review profile" — submit the pre-filled form
+  if (page.url().includes(FIRST_BROKER_LOGIN)) {
+    const submit = page.locator('input[type="submit"], button[type="submit"]').first();
+    if (await submit.isVisible({ timeout: TIMEOUTS.MODAL_VISIBILITY }).catch(() => false)) {
+      await submit.click();
+      await page.waitForLoadState('domcontentloaded');
+      console.log('✓ Submitted first-broker-login form');
+    }
+  }
+}
+
+/**
+ * Builds an error message naming the page the login actually stopped on.
+ * Without this a stall just reports "waitForURL timeout", which says nothing
+ * about which SSO step is blocking.
+ */
+async function describeStalledLogin(page: Page, appHost: string): Promise<string> {
+  const url = page.url();
+  const title = await page.title().catch(() => '');
+  const heading = await page
+    .locator('h1, #kc-page-title')
+    .first()
+    .textContent()
+    .catch(() => null);
+  const alert = await page
+    .locator('#input-error, .alert-error, [role="alert"]')
+    .first()
+    .textContent()
+    .catch(() => null);
+
+  const lines = [
+    `SSO login never returned to ${appHost} (waited ${TIMEOUTS.SSO_REDIRECT}ms).`,
+    `Stalled at: ${url}`,
+    title ? `Page title: ${title}` : null,
+    heading ? `Heading: ${heading.trim()}` : null,
+    alert ? `Alert: ${alert.trim()}` : null,
+  ];
+
+  if (url.includes(FIRST_BROKER_LOGIN)) {
+    lines.push(
+      `Keycloak is asking to link an account: the internal SSO identity for ${process.env.E2E_USER} ` +
+      'has no federated link to a redhat-external account. Logging in once manually as that ' +
+      'user re-establishes the link.'
+    );
+  }
+
+  return lines.filter(Boolean).join('\n  ');
+}
+
+/**
  * Disable TrustArc cookie consent popups that block UI interactions
  */
 async function disableCookiePrompt(page: Page) {
@@ -188,7 +268,25 @@ async function globalSetup(config: FullConfig) {
     // a looser check (any *.redhat.com that is not sso.*) also matches the internal
     // SSO host, so it resolves while login is still in flight and masks the real failure.
     const appHost = new URL(baseURL as string).host;
-    await page.waitForURL((url) => url.host === appHost, { timeout: TIMEOUTS.SSO_REDIRECT });
+
+    // After the internal SSO hand-off the flow either returns to the app or stops on
+    // Keycloak's account-linking interstitial. Settle on whichever arrives first.
+    await page
+      .waitForURL(
+        (url) => url.host === appHost || url.pathname.includes(FIRST_BROKER_LOGIN),
+        { timeout: TIMEOUTS.SSO_REDIRECT }
+      )
+      .catch(() => {
+        // Fall through — the checks below report where we actually ended up.
+      });
+
+    await handleFirstBrokerLogin(page);
+
+    try {
+      await page.waitForURL((url) => url.host === appHost, { timeout: TIMEOUTS.SSO_REDIRECT });
+    } catch {
+      throw new Error(await describeStalledLogin(page, appHost));
+    }
     console.log('✓ Redirected to:', page.url());
 
     // Wait for app to load and settle
