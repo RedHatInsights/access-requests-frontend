@@ -184,11 +184,11 @@ async function globalSetup(config: FullConfig) {
     // Perform SSO login
     await performSSOLogin(page, username, password);
 
-    // Wait for redirect back to app
-    await page.waitForURL(
-      (url) => url.hostname.includes('redhat.com') && !url.hostname.includes('sso.'),
-      { timeout: TIMEOUTS.SSO_REDIRECT }
-    );
+    // Wait for redirect back to the app itself. Match the baseURL host exactly —
+    // a looser check (any *.redhat.com that is not sso.*) also matches the internal
+    // SSO host, so it resolves while login is still in flight and masks the real failure.
+    const appHost = new URL(baseURL as string).host;
+    await page.waitForURL((url) => url.host === appHost, { timeout: TIMEOUTS.SSO_REDIRECT });
     console.log('✓ Redirected to:', page.url());
 
     // Wait for app to load and settle
@@ -217,26 +217,10 @@ async function globalSetup(config: FullConfig) {
     // Wait for state to stabilize
     await page.waitForTimeout(TIMEOUTS.STATE_STABILIZATION);
 
-    // Save authenticated state (localStorage, cookies)
+    // Save authenticated state (cookies + localStorage, which holds the OIDC user).
+    // Tests pick this up via use.storageState in playwright.config.ts.
     await context.storageState({ path: storageState as string });
     console.log('✓ Authentication state saved to:', storageState);
-
-    // Also save sessionStorage (Playwright doesn't save this automatically)
-    const sessionStorageData = await page.evaluate(() => {
-      const data: Record<string, string> = {};
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key) {
-          data[key] = sessionStorage.getItem(key) || '';
-        }
-      }
-      return data;
-    });
-
-    const fs = require('fs');
-    const sessionStoragePath = (storageState as string).replace('.json', '-session.json');
-    fs.writeFileSync(sessionStoragePath, JSON.stringify(sessionStorageData, null, 2));
-    console.log('✓ Session storage saved to:', sessionStoragePath);
   } catch (error) {
     console.error('❌ Global setup failed:', error);
 

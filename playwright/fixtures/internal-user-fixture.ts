@@ -1,6 +1,5 @@
-import { test as base, Browser, BrowserContext, Page } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
+import { test as base, BrowserContext, Page } from '@playwright/test';
+import { disableCookiePrompt } from '@redhat-cloud-services/playwright-test-auth';
 
 /**
  * Internal User Fixture
@@ -18,10 +17,22 @@ import * as path from 'path';
  *
  * WHAT THIS DOES:
  * ===============
- * 1. Creates a fresh browser context with chrome.auth.getUser() override
- * 2. Performs SSO login through the dev-proxy (baseURL)
+ * 1. Creates a browser context with the chrome.auth.getUser() override installed
+ * 2. Reuses the authenticated session produced by global-setup (see below)
  * 3. Swaps the OIDC token and sets profile.is_internal: true
  * 4. Returns a page with internal user access enabled
+ *
+ * WHERE THE SESSION COMES FROM:
+ * =============================
+ * SSO login happens exactly once, in playwright/setup/global-setup.ts, which saves
+ * the result to the path in `use.storageState` (playwright.config.ts).
+ *
+ * Playwright merges `use` options into browser.newContext() calls made inside a test,
+ * so the context below inherits that storageState (and baseURL) automatically — it does
+ * NOT need to, and must not, log in again. An earlier version of this fixture performed
+ * its own SSO login on the assumption that the context started empty; once global-setup
+ * began succeeding, that login hung for 60s waiting for a login form that never rendered,
+ * because the page was already authenticated.
  *
  * USAGE:
  * ======
@@ -34,33 +45,33 @@ import * as path from 'path';
  */
 
 /**
+ * Fallback when no baseURL is configured (matches playwright.config.ts)
+ */
+const DEFAULT_APP_URL = 'https://stage.foo.redhat.com:1337';
+
+/**
  * Timeouts (in milliseconds)
  */
 const TIMEOUTS = {
   pageLoad: 120_000,
-  ssoRedirect: 60_000,
-  ssoStage: 15_000,
-  oidcInit: 3_000,
   chromeReinit: 10_000,
-  modalVisibility: 2_000,
-  modalDismiss: 1_000,
-} as const;
-
-/**
- * SSO Selectors
- */
-const SSO_SELECTORS = {
-  usernameInput: 'input[name="username"]',
-  passwordInput: 'input[name="password"]',
-  nextButton: 'button:has-text("Next"), input[type="submit"]',
-  submitButton: 'input[type="submit"], button[type="submit"]',
-  greeting: 'text=Hi,',
 } as const;
 
 type InternalUserFixtures = {
   internalUserContext: BrowserContext;
   internalUserPage: Page;
 };
+
+/**
+ * True if the URL belongs to a Red Hat SSO host, i.e. we were bounced back to login.
+ */
+function isSSOUrl(url: string): boolean {
+  try {
+    return new URL(url).hostname.startsWith('sso.');
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Chrome auth override script that forces is_internal: true.
@@ -81,7 +92,7 @@ function createChromeAuthOverride() {
     const originalGetItem = Storage.prototype.getItem;
     Storage.prototype.getItem = function(key: string) {
       const value = originalGetItem.call(this, key);
-      if (key.startsWith('oidc.user:') && value) {
+      if (typeof key === 'string' && key.startsWith('oidc.user:') && value) {
         try {
           const data = JSON.parse(value);
           if (data.profile) {
@@ -136,8 +147,9 @@ function decodeJWT(token: string): any {
 
 export const test = base.extend<InternalUserFixtures>({
   internalUserContext: async ({ browser }, use) => {
-    // Create a fresh browser context with chrome.auth override
-    // Do NOT load storageState - we'll perform SSO login directly
+    // storageState and baseURL are inherited from `use` in playwright.config.ts —
+    // do not pass them here, and do not opt out of them: the session saved by
+    // global-setup is what authenticates this context.
     const context = await browser.newContext({
       ignoreHTTPSErrors: true,
     });
@@ -152,86 +164,26 @@ export const test = base.extend<InternalUserFixtures>({
 
   internalUserPage: async ({ internalUserContext, baseURL }, use) => {
     const page = await internalUserContext.newPage();
+    const appURL = baseURL || DEFAULT_APP_URL;
 
-    // Get credentials from environment
-    const ssoUser = process.env.E2E_USER;
-    const ssoPassword = process.env.E2E_PASSWORD;
-
-    if (!ssoUser || !ssoPassword) {
-      throw new Error(
-        'E2E_USER and E2E_PASSWORD environment variables must be set.\n\n' +
-        'These are required for SSO authentication in the internal user fixture.'
-      );
-    }
-
-    const appURL = baseURL || 'https://stage.foo.redhat.com:1337';
+    // TrustArc consent banner overlays the page and swallows clicks in CI
+    await disableCookiePrompt(page);
 
     //=========================================================================
-    // Step 1: Perform SSO Login through dev-proxy
+    // Step 1: Load the app using the session saved by global-setup
     //=========================================================================
 
-    // Navigate to app — OIDC redirects to SSO
     await page.goto(appURL, {
-      waitUntil: 'load',
+      waitUntil: 'domcontentloaded',
       timeout: TIMEOUTS.pageLoad,
     });
 
-    // Wait for SSO page
-    await page.waitForLoadState('load');
-
-    // SSO Stage 1: Username and password
-    await page.waitForSelector(SSO_SELECTORS.usernameInput, { state: 'visible', timeout: TIMEOUTS.ssoRedirect });
-    await page.fill(SSO_SELECTORS.usernameInput, ssoUser);
-    await page.click(SSO_SELECTORS.nextButton);
-
-    // Handle email linking modal if it appears
-    const modalNextButton = page.locator('button:has-text("Next")').first();
-    if (await modalNextButton.isVisible({ timeout: TIMEOUTS.modalVisibility }).catch(() => false)) {
-      await modalNextButton.click();
-      await page.waitForTimeout(TIMEOUTS.modalDismiss);
-    }
-
-    await page.waitForSelector(SSO_SELECTORS.passwordInput, { state: 'visible', timeout: TIMEOUTS.ssoStage });
-    await page.fill(SSO_SELECTORS.passwordInput, ssoPassword);
-    await page.click(SSO_SELECTORS.submitButton);
-
-    // SSO Stage 2: Kerberos prompt (if appears)
-    await Promise.race([
-      page.waitForSelector(SSO_SELECTORS.usernameInput, {
-        state: 'visible',
-        timeout: TIMEOUTS.ssoStage,
-      }),
-      page.waitForURL(
-        (url) => url.hostname.includes('redhat.com') && !url.hostname.includes('sso.'),
-        { timeout: TIMEOUTS.ssoStage }
-      ),
-      page.waitForSelector(SSO_SELECTORS.greeting, {
-        state: 'visible',
-        timeout: TIMEOUTS.ssoStage,
-      }),
-    ]).catch(() => {});
-
-    if (await page.locator(SSO_SELECTORS.usernameInput).isVisible().catch(() => false)) {
-      await page.fill(SSO_SELECTORS.usernameInput, ssoUser);
-      await page.fill(SSO_SELECTORS.passwordInput, ssoPassword);
-      await page.click(SSO_SELECTORS.submitButton);
-      await Promise.race([
-        page.waitForURL(
-          (url) => url.hostname.includes('redhat.com') && !url.hostname.includes('sso.'),
-          { timeout: TIMEOUTS.ssoStage }
-        ),
-        page.waitForSelector(SSO_SELECTORS.greeting, {
-          state: 'visible',
-          timeout: TIMEOUTS.ssoStage,
-        }),
-      ]).catch(() => {});
-    }
-
-    // Wait for OIDC initialization
-    await page.waitForTimeout(TIMEOUTS.oidcInit);
-    if (page.url().includes('#')) {
-      await page.goto(appURL, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(TIMEOUTS.oidcInit);
+    if (isSSOUrl(page.url())) {
+      throw new Error(
+        `Expected an authenticated session but was redirected to SSO (${page.url()}).\n` +
+        'The storage state saved by global-setup is missing or expired — check that ' +
+        'global-setup completed and that use.storageState points at its output.'
+      );
     }
 
     //=========================================================================
@@ -245,7 +197,10 @@ export const test = base.extend<InternalUserFixtures>({
     });
 
     if (!oidcState) {
-      throw new Error('OIDC state not found in localStorage after SSO login');
+      throw new Error(
+        'OIDC state not found in localStorage. global-setup should have saved it as part ' +
+        'of the storage state for this origin.'
+      );
     }
 
     // Get the current OIDC user data
@@ -292,8 +247,8 @@ export const test = base.extend<InternalUserFixtures>({
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(TIMEOUTS.chromeReinit);
 
-    // Verify session is valid (not redirected back to SSO)
-    if (page.url().includes('sso.stage.redhat.com') || page.url().includes('sso.redhat.com')) {
+    // Verify session survived the swap
+    if (isSSOUrl(page.url())) {
       throw new Error('Session swap failed - redirected to SSO');
     }
 
