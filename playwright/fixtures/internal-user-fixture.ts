@@ -131,20 +131,6 @@ function createChromeAuthOverride() {
   };
 }
 
-/**
- * Decodes a JWT token to get claims
- */
-function decodeJWT(token: string): any {
-  const parts = token.split('.');
-  if (parts.length !== 3) {
-    throw new Error('Invalid JWT format');
-  }
-  const payload = parts[1];
-  const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-  const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
-  return JSON.parse(Buffer.from(padded, 'base64').toString());
-}
-
 export const test = base.extend<InternalUserFixtures>({
   internalUserContext: async ({ browser }, use) => {
     // storageState and baseURL are inherited from `use` in playwright.config.ts —
@@ -187,61 +173,34 @@ export const test = base.extend<InternalUserFixtures>({
     }
 
     //=========================================================================
-    // Step 2: Swap OIDC Token with is_internal: true
+    // Step 2: Force is_internal: true on the stored OIDC profile
     //=========================================================================
 
-    // Find OIDC state in storage
-    const oidcState = await page.evaluate(() => {
+    // Mutate ONLY profile.is_internal, leaving the rest of the stored OIDC user
+    // untouched. Rebuilding the object loses access_token and refresh_token; a
+    // previous version assigned id_token to access_token, so the app sent the ID
+    // token as its bearer and the gateway answered 401 to every API call.
+    const swap = await page.evaluate(() => {
       const key = Object.keys(localStorage).find(k => k.startsWith('oidc.user:'));
-      return key ? { key, storage: 'localStorage' } : null;
+      if (!key) return { ok: false as const, reason: 'no oidc.user:* key in localStorage' };
+
+      const raw = localStorage.getItem(key);
+      if (!raw) return { ok: false as const, reason: `empty value at ${key}` };
+
+      const user = JSON.parse(raw);
+      if (!user.access_token) return { ok: false as const, reason: `no access_token at ${key}` };
+
+      user.profile = { ...user.profile, is_internal: true };
+      localStorage.setItem(key, JSON.stringify(user));
+      return { ok: true as const, reason: '' };
     });
 
-    if (!oidcState) {
+    if (!swap.ok) {
       throw new Error(
-        'OIDC state not found in localStorage. global-setup should have saved it as part ' +
-        'of the storage state for this origin.'
+        `Could not apply the is_internal override: ${swap.reason}. global-setup should have ` +
+        'saved the OIDC user as part of the storage state for this origin.'
       );
     }
-
-    // Get the current OIDC user data
-    const oidcUserData = await page.evaluate((key) => {
-      const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : null;
-    }, oidcState.key);
-
-    if (!oidcUserData || !oidcUserData.id_token) {
-      throw new Error('No token found in OIDC state');
-    }
-
-    const token = oidcUserData.id_token;
-    const claims = decodeJWT(token);
-
-    // Swap to our version with is_internal: true override
-    await page.evaluate(({ oidcKey, token, claims }) => {
-      const newOidcUser = {
-        id_token: token,
-        access_token: token,
-        token_type: 'Bearer',
-        refresh_token: '',
-        profile: {
-          ...claims,
-          is_internal: true, // Override: JWT has false, but we need true
-          is_org_admin: claims.is_org_admin,
-        },
-        expires_at: claims.exp,
-        expires_in: claims.exp - Math.floor(Date.now() / 1000),
-        expired: false,
-        scopes: (claims.scope || '').split(' '),
-        session_state: claims.session_state || null,
-      };
-
-      localStorage.setItem(oidcKey, JSON.stringify(newOidcUser));
-      localStorage.setItem('cs_jwt', token);
-    }, {
-      oidcKey: oidcState.key,
-      token,
-      claims,
-    });
 
     // Reload to activate overrides (Storage.prototype.getItem will maintain is_internal: true)
     await page.reload({ waitUntil: 'domcontentloaded' });

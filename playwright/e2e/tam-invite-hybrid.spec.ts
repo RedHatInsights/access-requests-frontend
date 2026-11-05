@@ -158,7 +158,13 @@ test.describe('TAM Invite - E2E Workflow', () => {
     // Step 1: Verify Identity (is_internal: true)
     //=======================================================================
 
-    const identity = await page.request.get(SELECTORS.api.identity).then(r => r.json());
+    const identityResponse = await page.request.get(SELECTORS.api.identity);
+    expect(
+      identityResponse.status(),
+      `${SELECTORS.api.identity} returned ${identityResponse.status()}: ${await identityResponse.text()}`
+    ).toBe(200);
+
+    const identity = await identityResponse.json();
     expect(identity.identity.user.is_internal).toBe(true);
     expect(identity.identity.user.is_org_admin).toBe(true);
 
