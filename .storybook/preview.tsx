@@ -6,6 +6,7 @@ import registry, { RegistryContext } from '../src/store';
 import { HccStorybookProvider, type FeatureFlagsConfig, FeatureFlagsProvider, hccPreviewDefaults } from '@redhat-cloud-services/hcc-storybook-hub';
 import { MemoryRouter } from 'react-router-dom';
 import NotificationsProvider from '@redhat-cloud-services/frontend-components-notifications/NotificationsProvider';
+import { IntlMessagesProvider } from '../src/shared/i18n';
 
 const preview: Preview = {
   ...hccPreviewDefaults,
@@ -59,7 +60,9 @@ const preview: Preview = {
               <RegistryContext.Provider value={{ getRegistry: () => registry }}>
                 <Provider store={registry.getStore()}>
                   <NotificationsProvider>
-                    <Story />
+                    <IntlMessagesProvider locale="en">
+                      <Story />
+                    </IntlMessagesProvider>
                   </NotificationsProvider>
                 </Provider>
               </RegistryContext.Provider>

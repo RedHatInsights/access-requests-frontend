@@ -20,7 +20,7 @@ export function RequestDetailsCard({
   return (
     <RequestDetailsCardView
       isInternal={isInternal}
-      status={request?.status || 'pending'}
+      status={request?.status || ('pending' as const)}
       requestId={requestId}
       displayProps={displayProps}
       requestData={request || {}}

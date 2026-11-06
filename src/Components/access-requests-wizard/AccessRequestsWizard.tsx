@@ -19,12 +19,60 @@ import ExclamationCircleIcon from '@patternfly/react-icons/dist/js/icons/exclama
 import FormRenderer from '@data-driven-forms/react-form-renderer/form-renderer';
 import Pf4FormTemplate from '@data-driven-forms/pf4-component-mapper/form-template';
 import componentMapper from '@data-driven-forms/pf4-component-mapper/component-mapper';
+import { defineMessages, useIntl } from 'react-intl';
 import SelectRoles from './SelectRoles';
 import ReviewDetails from './ReviewDetails';
 import AccessDuration from './AccessDuration';
 import SetName from './SetName';
 import schemaBuilder from './schema';
 import { useAccessRequestWizard } from './hooks/useAccessRequestWizard';
+
+const messages = defineMessages({
+  cancelTitle: {
+    id: 'accessRequests.wizard.cancel.title',
+    defaultMessage: 'Exit request creation?',
+  },
+  cancelBody: {
+    id: 'accessRequests.wizard.cancel.body',
+    defaultMessage: 'All inputs will be discarded.',
+  },
+  exit: {
+    id: 'accessRequests.wizard.cancel.exit',
+    defaultMessage: 'Exit',
+  },
+  stay: {
+    id: 'accessRequests.wizard.cancel.stay',
+    defaultMessage: 'Stay',
+  },
+  statusStep: {
+    id: 'accessRequests.wizard.statusStep',
+    defaultMessage: 'Status',
+  },
+  submitting: {
+    id: 'accessRequests.wizard.submitting',
+    defaultMessage: 'Submitting access request',
+  },
+  close: {
+    id: 'accessRequests.wizard.close',
+    defaultMessage: 'Close',
+  },
+  errorTitle: {
+    id: 'accessRequests.wizard.errorTitle',
+    defaultMessage: 'An error occurred',
+  },
+  returnToStep1: {
+    id: 'accessRequests.wizard.returnToStep1',
+    defaultMessage: 'Return to Step 1',
+  },
+  validateOrgId: {
+    id: 'accessRequests.wizard.validation.orgId',
+    defaultMessage: 'Please enter a valid organization ID',
+  },
+  requestTitle: {
+    id: 'accessRequests.wizard.requestTitle',
+    defaultMessage: '{variant} request',
+  },
+});
 
 const FormTemplate = (props: Record<string, unknown>) => (
   <Pf4FormTemplate {...props} showFormControls={false} />
@@ -68,6 +116,7 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
 }) => {
   const isEdit = variant === 'edit';
   const schema = useRef(schemaBuilder(isEdit, variant));
+  const intl = useIntl();
 
   const {
     cancelWarningVisible,
@@ -90,7 +139,7 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
   // Validator mapper for form validation
   const validatorMapper = {
     'validate-org-id': () => (value: string) =>
-      value && !error ? undefined : 'Please enter a valid organization ID',
+      value && !error ? undefined : intl.formatMessage(messages.validateOrgId),
     'validate-duration': () => (value: string[]) => value?.length > 0,
   };
 
@@ -98,14 +147,14 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
   if (cancelWarningVisible) {
     return (
       <Modal variant="small" isOpen onClose={onCloseCancelWarning}>
-        <ModalHeader title="Exit request creation?" />
-        <ModalBody>All inputs will be discarded.</ModalBody>
+        <ModalHeader title={intl.formatMessage(messages.cancelTitle)} />
+        <ModalBody>{intl.formatMessage(messages.cancelBody)}</ModalBody>
         <ModalFooter>
           <Button variant="primary" onClick={() => onClose(false)}>
-            Exit
+            {intl.formatMessage(messages.exit)}
           </Button>
           <Button variant="link" onClick={() => setCancelWarningVisible(false)}>
-            Stay
+            {intl.formatMessage(messages.stay)}
           </Button>
         </ModalFooter>
       </Modal>
@@ -124,10 +173,15 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
       >
         <Wizard
           className="accessRequests"
-          title={`${capitalize(variant)} request`}
+          title={intl.formatMessage(messages.requestTitle, {
+            variant: capitalize(variant),
+          })}
           onClose={() => onClose(true)}
         >
-          <WizardStep name="Status" id="status-step">
+          <WizardStep
+            name={intl.formatMessage(messages.statusStep)}
+            id="status-step"
+          >
             {isLoading ? (
               <Bullseye>
                 <Spinner />
@@ -138,21 +192,23 @@ const AccessRequestsWizard: React.FC<AccessRequestsWizardProps> = ({
                   <>
                     <Spinner size="lg" />
                     <Title headingLevel="h2" size="lg">
-                      Submitting access request
+                      {intl.formatMessage(messages.submitting)}
                     </Title>
                     <Button variant="link" onClick={() => onClose(true)}>
-                      Close
+                      {intl.formatMessage(messages.close)}
                     </Button>
                   </>
                 ) : (
                   <>
                     <EmptyState
                       icon={ExclamationCircleIcon}
-                      titleText={error?.title || 'An error occurred'}
+                      titleText={
+                        error?.title || intl.formatMessage(messages.errorTitle)
+                      }
                     >
                       <EmptyStateBody>{error?.description}</EmptyStateBody>
                       <Button variant="primary" onClick={clearError}>
-                        Return to Step 1
+                        {intl.formatMessage(messages.returnToStep1)}
                       </Button>
                     </EmptyState>
                   </>

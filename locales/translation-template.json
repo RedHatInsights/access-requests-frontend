@@ -1,0 +1,218 @@
+{
+  "accessRequests.cancelRequest.body": {
+    "defaultMessage": "Are you sure you want to cancel this request? This action cannot be undone."
+  },
+  "accessRequests.cancelRequest.confirm": {
+    "defaultMessage": "Yes, cancel request"
+  },
+  "accessRequests.cancelRequest.keep": {
+    "defaultMessage": "No, keep request"
+  },
+  "accessRequests.cancelRequest.title": {
+    "defaultMessage": "Cancel request?"
+  },
+  "accessRequests.details.card.decision": {
+    "defaultMessage": "Request decision"
+  },
+  "accessRequests.details.card.status": {
+    "defaultMessage": "Request status"
+  },
+  "accessRequests.details.card.title": {
+    "defaultMessage": "Request details"
+  },
+  "accessRequests.mua.errorLoading": {
+    "defaultMessage": "Error loading roles: {error}"
+  },
+  "accessRequests.mua.noResults.body": {
+    "defaultMessage": "No results match the filter criteria. Remove all filters or clear all filters to show results."
+  },
+  "accessRequests.mua.noResults.clearFilters": {
+    "defaultMessage": "Clear filters"
+  },
+  "accessRequests.mua.noResults.title": {
+    "defaultMessage": "No matching requests found"
+  },
+  "accessRequests.mua.reload": {
+    "defaultMessage": "Reload"
+  },
+  "accessRequests.mua.selectRoles.body": {
+    "defaultMessage": "Select the roles you would like access to."
+  },
+  "accessRequests.mua.selectRoles.title": {
+    "defaultMessage": "Select roles"
+  },
+  "accessRequests.mua.table.ariaLabel": {
+    "defaultMessage": "My user access roles"
+  },
+  "accessRequests.page.description": {
+    "defaultMessage": "Below is a list of all submitted requests for read only account access."
+  },
+  "accessRequests.page.title": {
+    "defaultMessage": "Access Requests"
+  },
+  "accessRequests.routing.externalView": {
+    "defaultMessage": "External view"
+  },
+  "accessRequests.routing.internalView": {
+    "defaultMessage": "Internal view"
+  },
+  "accessRequests.table.ariaLabel": {
+    "defaultMessage": "Access requests table"
+  },
+  "accessRequests.table.clearFilters": {
+    "defaultMessage": "Clear filters"
+  },
+  "accessRequests.table.createRequest": {
+    "defaultMessage": "Create request"
+  },
+  "accessRequests.table.empty.externalBody": {
+    "defaultMessage": "You have no pending Red Hat access requests."
+  },
+  "accessRequests.table.empty.externalTitle": {
+    "defaultMessage": "You have no access requests"
+  },
+  "accessRequests.table.empty.internalBody": {
+    "defaultMessage": "Click the button below to create an access request."
+  },
+  "accessRequests.table.empty.internalTitle": {
+    "defaultMessage": "No access requests"
+  },
+  "accessRequests.table.noResults.body": {
+    "defaultMessage": "No results match the filter criteria. Remove all filters or clear all filters to show results."
+  },
+  "accessRequests.table.noResults.title": {
+    "defaultMessage": "No matching requests found"
+  },
+  "accessRequests.table.orgIdCategory": {
+    "defaultMessage": "Organization ID"
+  },
+  "accessRequests.table.selectStatusesAria": {
+    "defaultMessage": "Select statuses"
+  },
+  "accessRequests.table.statusCategory": {
+    "defaultMessage": "Status"
+  },
+  "accessRequests.wizard.accessDuration.dateSeparator": {
+    "defaultMessage": "to"
+  },
+  "accessRequests.wizard.accessDuration.endDateAria": {
+    "defaultMessage": "End date"
+  },
+  "accessRequests.wizard.accessDuration.endFormat": {
+    "defaultMessage": "End date must be in mm/dd/yyyy format"
+  },
+  "accessRequests.wizard.accessDuration.endFormatSr": {
+    "defaultMessage": "End date format validation"
+  },
+  "accessRequests.wizard.accessDuration.endOrder": {
+    "defaultMessage": "End date must be after start date"
+  },
+  "accessRequests.wizard.accessDuration.endOrderSr": {
+    "defaultMessage": "End date ordering validation"
+  },
+  "accessRequests.wizard.accessDuration.label": {
+    "defaultMessage": "Access duration"
+  },
+  "accessRequests.wizard.accessDuration.maxDuration": {
+    "defaultMessage": "Access duration may not be longer than one year"
+  },
+  "accessRequests.wizard.accessDuration.maxDurationSr": {
+    "defaultMessage": "Maximum duration validation"
+  },
+  "accessRequests.wizard.accessDuration.popoverBody": {
+    "defaultMessage": "This is the time frame you would like to be granted read access to accounts."
+  },
+  "accessRequests.wizard.accessDuration.popoverField": {
+    "defaultMessage": "access duration"
+  },
+  "accessRequests.wizard.accessDuration.startDateAria": {
+    "defaultMessage": "Start date"
+  },
+  "accessRequests.wizard.accessDuration.startFormat": {
+    "defaultMessage": "Start date must be in mm/dd/yyyy format"
+  },
+  "accessRequests.wizard.accessDuration.startFormatSr": {
+    "defaultMessage": "Start date format validation"
+  },
+  "accessRequests.wizard.accessDuration.startMax": {
+    "defaultMessage": "Start date must be within 60 days of today"
+  },
+  "accessRequests.wizard.accessDuration.startMaxSr": {
+    "defaultMessage": "Start date maximum validation"
+  },
+  "accessRequests.wizard.accessDuration.startMin": {
+    "defaultMessage": "Start date must be today or later"
+  },
+  "accessRequests.wizard.accessDuration.startMinSr": {
+    "defaultMessage": "Start date minimum validation"
+  },
+  "accessRequests.wizard.accessDuration.validationAria": {
+    "defaultMessage": "Validation rules for access duration"
+  },
+  "accessRequests.wizard.cancel.body": {
+    "defaultMessage": "All inputs will be discarded."
+  },
+  "accessRequests.wizard.cancel.exit": {
+    "defaultMessage": "Exit"
+  },
+  "accessRequests.wizard.cancel.stay": {
+    "defaultMessage": "Stay"
+  },
+  "accessRequests.wizard.cancel.title": {
+    "defaultMessage": "Exit request creation?"
+  },
+  "accessRequests.wizard.close": {
+    "defaultMessage": "Close"
+  },
+  "accessRequests.wizard.errorTitle": {
+    "defaultMessage": "An error occurred"
+  },
+  "accessRequests.wizard.requestTitle": {
+    "defaultMessage": "{variant} request"
+  },
+  "accessRequests.wizard.returnToStep1": {
+    "defaultMessage": "Return to Step 1"
+  },
+  "accessRequests.wizard.review.accessDuration": {
+    "defaultMessage": "Access duration"
+  },
+  "accessRequests.wizard.review.accountName": {
+    "defaultMessage": "Account name"
+  },
+  "accessRequests.wizard.review.from": {
+    "defaultMessage": "From"
+  },
+  "accessRequests.wizard.review.orgId": {
+    "defaultMessage": "Organization ID"
+  },
+  "accessRequests.wizard.review.roles": {
+    "defaultMessage": "Roles"
+  },
+  "accessRequests.wizard.review.to": {
+    "defaultMessage": "To"
+  },
+  "accessRequests.wizard.setName.firstName": {
+    "defaultMessage": "First name"
+  },
+  "accessRequests.wizard.setName.lastName": {
+    "defaultMessage": "Last name"
+  },
+  "accessRequests.wizard.setName.popoverBody": {
+    "defaultMessage": "Customers will be able to see this information as part of your request"
+  },
+  "accessRequests.wizard.setName.popoverFieldFirst": {
+    "defaultMessage": "first name"
+  },
+  "accessRequests.wizard.setName.popoverFieldLast": {
+    "defaultMessage": "last name"
+  },
+  "accessRequests.wizard.statusStep": {
+    "defaultMessage": "Status"
+  },
+  "accessRequests.wizard.submitting": {
+    "defaultMessage": "Submitting access request"
+  },
+  "accessRequests.wizard.validation.orgId": {
+    "defaultMessage": "Please enter a valid organization ID"
+  }
+}

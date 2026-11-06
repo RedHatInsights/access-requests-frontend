@@ -1,4 +1,5 @@
 import React from 'react';
+import { defineMessages, useIntl } from 'react-intl';
 import { Button, Pagination, Title, Tooltip } from '@patternfly/react-core';
 import {
   TableVariant,
@@ -19,6 +20,29 @@ import { useMUATablePagination } from './hooks/useMUATablePagination';
 import { useMUATableRolesSelection } from './hooks/useMUATableRolesSelection';
 import { useMUATableExpansion } from './hooks/useMUATableExpansion';
 import { useRoleToolbar } from './hooks/useRoleToolbar';
+
+const muaMessages = defineMessages({
+  tableAria: {
+    id: 'accessRequests.mua.table.ariaLabel',
+    defaultMessage: 'My user access roles',
+  },
+  errorLoading: {
+    id: 'accessRequests.mua.errorLoading',
+    defaultMessage: 'Error loading roles: {error}',
+  },
+  reload: {
+    id: 'accessRequests.mua.reload',
+    defaultMessage: 'Reload',
+  },
+  selectRolesTitle: {
+    id: 'accessRequests.mua.selectRoles.title',
+    defaultMessage: 'Select roles',
+  },
+  selectRolesBody: {
+    id: 'accessRequests.mua.selectRoles.body',
+    defaultMessage: 'Select the roles you would like access to.',
+  },
+});
 
 interface SelectedRole {
   display_name: string;
@@ -162,6 +186,7 @@ export function MUARolesTableView({
   setSelectedRoles,
   clearFilters,
 }: MUARolesTableViewProps): React.ReactElement {
+  const intl = useIntl();
   const columns = ['Role name', 'Role description', 'Permissions'];
   const expandedColumns = ['Application', 'Resource type', 'Operation'];
 
@@ -243,7 +268,10 @@ export function MUARolesTableView({
 
   // Main table
   const roleTable = (
-    <Table aria-label="My user access roles" variant={TableVariant.compact}>
+    <Table
+      aria-label={intl.formatMessage(muaMessages.tableAria)}
+      variant={TableVariant.compact}
+    >
       <Thead>
         <Tr>
           {!isReadOnly && <Th />}
@@ -379,9 +407,9 @@ export function MUARolesTableView({
   if (error) {
     return (
       <div>
-        <p>Error loading roles: {error}</p>
+        <p>{intl.formatMessage(muaMessages.errorLoading, { error })}</p>
         <Button variant="link" onClick={() => window.location.reload()}>
-          Retry
+          {intl.formatMessage(muaMessages.reload)}
         </Button>
       </div>
     );
@@ -391,8 +419,10 @@ export function MUARolesTableView({
     <React.Fragment>
       {!isReadOnly && (
         <React.Fragment>
-          <Title headingLevel="h2">Select roles</Title>
-          <p>Select the roles you would like access to.</p>
+          <Title headingLevel="h2">
+            {intl.formatMessage(muaMessages.selectRolesTitle)}
+          </Title>
+          <p>{intl.formatMessage(muaMessages.selectRolesBody)}</p>
         </React.Fragment>
       )}
       {roleToolbar}

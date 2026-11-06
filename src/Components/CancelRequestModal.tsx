@@ -1,7 +1,28 @@
 import React from 'react';
 import { Button, Spinner } from '@patternfly/react-core';
 import { Modal } from '@patternfly/react-core/deprecated';
+import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
 import { useCancelRequest } from './access-requests-wizard/hooks/useCancelRequest';
+
+const messages = defineMessages({
+  title: {
+    id: 'accessRequests.cancelRequest.title',
+    defaultMessage: 'Cancel request?',
+  },
+  confirm: {
+    id: 'accessRequests.cancelRequest.confirm',
+    defaultMessage: 'Yes, cancel request',
+  },
+  keep: {
+    id: 'accessRequests.cancelRequest.keep',
+    defaultMessage: 'No, keep request',
+  },
+  body: {
+    id: 'accessRequests.cancelRequest.body',
+    defaultMessage:
+      'Are you sure you want to cancel this request? This action cannot be undone.',
+  },
+});
 
 interface CancelRequestModalViewProps {
   isLoading: boolean;
@@ -14,10 +35,11 @@ export const CancelRequestModalView: React.FC<CancelRequestModalViewProps> = ({
   onCancel,
   onClose,
 }) => {
+  const intl = useIntl();
   return (
     <Modal
       variant="small"
-      title="Cancel request?"
+      title={intl.formatMessage(messages.title)}
       isOpen={true}
       onClose={() => onClose(false)}
       actions={[
@@ -27,15 +49,18 @@ export const CancelRequestModalView: React.FC<CancelRequestModalViewProps> = ({
           onClick={onCancel}
           isDisabled={isLoading}
         >
-          {isLoading ? <Spinner size="sm" /> : 'Yes, cancel request'}
+          {isLoading ? (
+            <Spinner size="sm" />
+          ) : (
+            intl.formatMessage(messages.confirm)
+          )}
         </Button>,
         <Button key="cancel" variant="link" onClick={() => onClose(false)}>
-          No, keep request
+          {intl.formatMessage(messages.keep)}
         </Button>,
       ]}
     >
-      Are you sure you want to cancel this request? This action cannot be
-      undone.
+      <FormattedMessage {...messages.body} />
     </Modal>
   );
 };
