@@ -7,8 +7,36 @@ import {
   Content,
   ContentVariants,
 } from '@patternfly/react-core';
+import { FormattedMessage, defineMessages } from 'react-intl';
 import './review-details.scss';
 import { useReviewDetails } from './hooks/useReviewDetails';
+
+const messages = defineMessages({
+  accountName: {
+    id: 'accessRequests.wizard.review.accountName',
+    defaultMessage: 'Account name',
+  },
+  orgId: {
+    id: 'accessRequests.wizard.review.orgId',
+    defaultMessage: 'Organization ID',
+  },
+  accessDuration: {
+    id: 'accessRequests.wizard.review.accessDuration',
+    defaultMessage: 'Access duration',
+  },
+  from: {
+    id: 'accessRequests.wizard.review.from',
+    defaultMessage: 'From',
+  },
+  to: {
+    id: 'accessRequests.wizard.review.to',
+    defaultMessage: 'To',
+  },
+  roles: {
+    id: 'accessRequests.wizard.review.roles',
+    defaultMessage: 'Roles',
+  },
+});
 
 interface ReviewData {
   accountName: string;
@@ -36,7 +64,7 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
                 component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
-                Account name
+                <FormattedMessage {...messages.accountName} />
               </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
@@ -53,7 +81,7 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
                 component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
-                Organization ID
+                <FormattedMessage {...messages.orgId} />
               </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
@@ -68,7 +96,7 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
                 component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
-                Access duration
+                <FormattedMessage {...messages.accessDuration} />
               </Content>
             </GridItem>
           </Grid>
@@ -76,7 +104,9 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
         <StackItem>
           <Grid>
             <GridItem sm={12} md={2}>
-              <Content component={ContentVariants.h4}>From</Content>
+              <Content component={ContentVariants.h4}>
+                <FormattedMessage {...messages.from} />
+              </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
               <Content component={ContentVariants.p}>{data.accessFrom}</Content>
@@ -86,7 +116,9 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
         <StackItem className="pf-v6-u-mb-md">
           <Grid>
             <GridItem sm={12} md={2}>
-              <Content component={ContentVariants.h4}>To</Content>
+              <Content component={ContentVariants.h4}>
+                <FormattedMessage {...messages.to} />
+              </Content>
             </GridItem>
             <GridItem sm={12} md={10}>
               <Content component={ContentVariants.p}>{data.accessTo}</Content>
@@ -100,7 +132,7 @@ export const ReviewDetailsDisplay: React.FC<ReviewDetailsDisplayProps> = ({
                 component={ContentVariants.h4}
                 className="access-requests-bold-text"
               >
-                Roles
+                <FormattedMessage {...messages.roles} />
               </Content>
             </GridItem>
             <GridItem sm={12} md={10}>

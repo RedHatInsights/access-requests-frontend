@@ -1,9 +1,22 @@
 import React from 'react';
 import { Provider } from 'react-redux';
 import { PageSection, Title } from '@patternfly/react-core';
+import { FormattedMessage, defineMessages } from 'react-intl';
 import AccessRequestsTable from '../Components/AccessRequestsTable';
 import registry from '../store';
 import ErroReducerCatcher from '../Components/ErrorReducerCatcher';
+
+const messages = defineMessages({
+  title: {
+    id: 'accessRequests.page.title',
+    defaultMessage: 'Access Requests',
+  },
+  description: {
+    id: 'accessRequests.page.description',
+    defaultMessage:
+      'Below is a list of all submitted requests for read only account access.',
+  },
+});
 
 interface AccessRequestsPageProps {
   /**
@@ -26,11 +39,10 @@ const AccessRequestsPage: React.FC<AccessRequestsPageProps> = ({
       <ErroReducerCatcher>
         <PageSection hasBodyWrapper={false}>
           <Title headingLevel="h1" className="pf-v6-u-pb-sm">
-            Access Requests
+            <FormattedMessage {...messages.title} />
           </Title>
           <p>
-            Below is a list of all submitted requests for read only account
-            access.
+            <FormattedMessage {...messages.description} />
           </p>
         </PageSection>
         <PageSection hasBodyWrapper={false} padding={{ default: 'noPadding' }}>

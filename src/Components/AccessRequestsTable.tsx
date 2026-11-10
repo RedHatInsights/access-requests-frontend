@@ -1,4 +1,5 @@
 import React from 'react';
+import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
 import {
   Label,
   LabelGroup,
@@ -34,6 +35,58 @@ import { StatusLabel } from '../Helpers/getActions';
 import { useAccessRequestsData } from './hooks/useAccessRequestsData';
 import { useAccessRequestsFiltering } from './hooks/useAccessRequestsFiltering';
 import { useDebounce } from './hooks/useDebounce';
+
+const tableMessages = defineMessages({
+  createRequest: {
+    id: 'accessRequests.table.createRequest',
+    defaultMessage: 'Create request',
+  },
+  emptyInternalTitle: {
+    id: 'accessRequests.table.empty.internalTitle',
+    defaultMessage: 'No access requests',
+  },
+  emptyExternalTitle: {
+    id: 'accessRequests.table.empty.externalTitle',
+    defaultMessage: 'You have no access requests',
+  },
+  emptyInternalBody: {
+    id: 'accessRequests.table.empty.internalBody',
+    defaultMessage: 'Click the button below to create an access request.',
+  },
+  emptyExternalBody: {
+    id: 'accessRequests.table.empty.externalBody',
+    defaultMessage: 'You have no pending Red Hat access requests.',
+  },
+  clearFilters: {
+    id: 'accessRequests.table.clearFilters',
+    defaultMessage: 'Clear filters',
+  },
+  selectStatusesAria: {
+    id: 'accessRequests.table.selectStatusesAria',
+    defaultMessage: 'Select statuses',
+  },
+  statusCategory: {
+    id: 'accessRequests.table.statusCategory',
+    defaultMessage: 'Status',
+  },
+  orgIdCategory: {
+    id: 'accessRequests.table.orgIdCategory',
+    defaultMessage: 'Organization ID',
+  },
+  tableAria: {
+    id: 'accessRequests.table.ariaLabel',
+    defaultMessage: 'Access requests table',
+  },
+  noResultsTitle: {
+    id: 'accessRequests.table.noResults.title',
+    defaultMessage: 'No matching requests found',
+  },
+  noResultsBody: {
+    id: 'accessRequests.table.noResults.body',
+    defaultMessage:
+      'No results match the filter criteria. Remove all filters or clear all filters to show results.',
+  },
+});
 
 interface AccessRequestsPaginationViewProps {
   /** Total number of items */
@@ -100,6 +153,7 @@ interface AccessRequestsTableProps {
 const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
   isInternal,
 }) => {
+  const intl = useIntl();
   // Column definitions based on view type
   const columns = React.useMemo(
     () =>
@@ -183,7 +237,7 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
   // Create button for internal users
   const createButton = isInternal && (
     <Button variant="primary" onClick={() => setOpenModal({ type: 'create' })}>
-      Create request
+      {intl.formatMessage(tableMessages.createRequest)}
     </Button>
   );
 
@@ -195,14 +249,16 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
           headingLevel="h3"
           icon={PlusCircleIcon}
           titleText={
-            isInternal ? 'No access requests' : 'You have no access requests'
+            isInternal
+              ? intl.formatMessage(tableMessages.emptyInternalTitle)
+              : intl.formatMessage(tableMessages.emptyExternalTitle)
           }
           variant="lg"
         >
           <EmptyStateBody>
             {isInternal
-              ? 'Click the button below to create an access request.'
-              : 'You have no pending Red Hat access requests.'}
+              ? intl.formatMessage(tableMessages.emptyInternalBody)
+              : intl.formatMessage(tableMessages.emptyExternalBody)}
           </EmptyStateBody>
           <EmptyStateFooter>{createButton}</EmptyStateFooter>
         </EmptyState>
@@ -235,7 +291,7 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
         setPage(1);
       }}
     >
-      Clear filters
+      {intl.formatMessage(tableMessages.clearFilters)}
     </Button>
   );
 
@@ -302,7 +358,9 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
                 </span>
                 <Select
                   aria-labelledby={selectLabelId}
-                  aria-label="Select statuses"
+                  aria-label={intl.formatMessage(
+                    tableMessages.selectStatusesAria
+                  )}
                   isOpen={filtering.isSelectOpen}
                   selected={filtering.statusSelections}
                   onSelect={(
@@ -404,7 +462,9 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
 
       {/* Filter chips */}
       <ToolbarContent>
-        <LabelGroup categoryName="Status">
+        <LabelGroup
+          categoryName={intl.formatMessage(tableMessages.statusCategory)}
+        >
           {filtering.statusSelections.map((status) => (
             <Label
               variant="outline"
@@ -421,7 +481,9 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
           ))}
         </LabelGroup>
         {filtering.orgIdFilter && (
-          <LabelGroup categoryName="Organization ID">
+          <LabelGroup
+            categoryName={intl.formatMessage(tableMessages.orgIdCategory)}
+          >
             <Label
               variant="outline"
               onClose={() => {
@@ -448,7 +510,10 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
 
   // Main data table
   const table = (
-    <Table aria-label="Access requests table" variant="compact">
+    <Table
+      aria-label={intl.formatMessage(tableMessages.tableAria)}
+      variant="compact"
+    >
       <Thead>
         <Tr>
           {columns.map((column, columnIndex) => (
@@ -537,12 +602,11 @@ const AccessRequestsTable: React.FC<AccessRequestsTableProps> = ({
                 <EmptyState
                   headingLevel="h2"
                   icon={SearchIcon}
-                  titleText="No matching requests found"
+                  titleText={intl.formatMessage(tableMessages.noResultsTitle)}
                   variant="sm"
                 >
                   <EmptyStateBody>
-                    No results match the filter criteria. Remove all filters or
-                    clear all filters to show results.
+                    <FormattedMessage {...tableMessages.noResultsBody} />
                   </EmptyStateBody>
                   <EmptyStateFooter>{clearFiltersButton}</EmptyStateFooter>
                 </EmptyState>

@@ -6,11 +6,13 @@ interface RoleRow {
   [key: string]: any;
 }
 
+export type FilterColumn = 'roleName' | 'application';
+
 interface ToolbarState {
   isDropdownOpen: boolean;
   isSelectOpen: boolean;
   isBulkSelectOpen: boolean;
-  filterColumn: string;
+  filterColumn: FilterColumn;
 }
 
 type ToolbarAction =
@@ -20,7 +22,6 @@ type ToolbarAction =
 interface UseRoleToolbarProps {
   setSelectedRoles: (roles: string[]) => void;
   filteredRows: RoleRow[];
-  columns: string[];
   appSelections: string[];
   setAppSelections: React.Dispatch<React.SetStateAction<string[]>>;
   nameFilter: string;
@@ -31,7 +32,7 @@ interface UseRoleToolbarReturn {
   setActions: (name: keyof ToolbarState, value: any) => void;
   hasFilters: boolean;
   onSelectAll: (isSelected: boolean) => void;
-  handleFilterColumnSelect: (value: string) => void;
+  handleFilterColumnSelect: (value: FilterColumn) => void;
   handleAppSelection: (value: string) => void;
   handleToggleDropdown: (isOpen: boolean) => void;
   handleToggleSelect: (isOpen: boolean) => void;
@@ -40,7 +41,6 @@ interface UseRoleToolbarReturn {
 export const useRoleToolbar = ({
   setSelectedRoles,
   filteredRows,
-  columns,
   appSelections,
   setAppSelections,
   nameFilter,
@@ -49,7 +49,7 @@ export const useRoleToolbar = ({
     isDropdownOpen: false,
     isSelectOpen: false,
     isBulkSelectOpen: false,
-    filterColumn: columns[0] || 'Role name',
+    filterColumn: 'roleName',
   };
 
   const reducer = (
@@ -98,7 +98,7 @@ export const useRoleToolbar = ({
   );
 
   const handleFilterColumnSelect = React.useCallback(
-    (value: string) => {
+    (value: FilterColumn) => {
       setActions('isDropdownOpen', false);
       setActions('isSelectOpen', false);
       setActions('filterColumn', value);
